@@ -1,8 +1,10 @@
 #include "pathfinder.h"
 
 static bool is_paths_equal(t_path *data, t_path *expected) {
-    bool res = ((mx_strcmp(data->to, expected->to) == 0 || mx_strcmp(data->to, expected->from) == 0) &&
-                (mx_strcmp(data->from, expected->to) == 0 || mx_strcmp(data->from, expected->from) == 0));
+    bool res = ((mx_strcmp(data->to, expected->to) == 0
+                 || mx_strcmp(data->to, expected->from) == 0) &&
+                (mx_strcmp(data->from, expected->to) == 0
+                 || mx_strcmp(data->from, expected->from) == 0));
     return res;
 }
 
@@ -12,7 +14,7 @@ static void add_current_to_paths_list(t_paths_list **routes_list, t_stop *destin
     }
     t_path *path = mx_create_path(destination);
     t_paths_list *route = (t_paths_list *) mx_list_find_where((t_list *) *routes_list, path,
-                                                              (bool (*)(void *, void *)) is_paths_equal);
+                                                              (t_comp_func *) is_paths_equal);
 
     if (!route) {
         mx_push_back((t_list **) routes_list, path);
@@ -53,7 +55,7 @@ static void search_routes(t_paths_list **routes_list, t_stops_list *start) {
     mx_push_back((t_list **) &queue, start->data);
 
     while (queue) {
-        mx_sort_list((t_list *) queue, (bool (*)(void *, void *)) compare_stops_by_distance);
+        mx_sort_list((t_list *) queue, (t_comp_func *) compare_stops_by_distance);
         if (!queue->data->is_visited) {
             add_neighbors_to_queue(&queue, queue->data);
             add_current_to_paths_list(routes_list, queue->data);

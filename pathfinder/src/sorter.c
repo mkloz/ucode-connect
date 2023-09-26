@@ -1,113 +1,96 @@
 #include "pathfinder.h"
 
-static void swap_paths(t_paths_list *a, t_paths_list *b) {
-    t_path *temp = a->data;
+static void swap_nodes(t_list *a, t_list *b) {
+    if (a->data == b->data) return;
+
+    void *temp = a->data;
+
     a->data = b->data;
     b->data = temp;
 }
 
 static int get_stop_index(t_stops_list *stops, const char *stop_name) {
     int index = 0;
-    t_stops_list *current_stop = stops;
 
-    while (current_stop != NULL && mx_strcmp(current_stop->data->name, stop_name) != 0) {
+    while (stops
+           && mx_strcmp(stops->data->name, stop_name)) {
         index++;
-        current_stop = current_stop->next;
+        stops = stops->next;
     }
 
     return index;
 }
 
-static int compare_stops_order(t_stops_list *stops, char *stop1, char *stop2) {
-    // Compare the order of two stops in the stops list
-    int index1 = get_stop_index(stops, stop1);
-    int index2 = get_stop_index(stops, stop2);
+static int get_stops_indexes_diff(t_stops_list *stops, char *stop_name, char *stop_2_name) {
+    return get_stop_index(stops, stop_2_name) - get_stop_index(stops, stop_name);
+}
 
-    if (index1 < index2) {
-        return -1;
-    } else if (index1 > index2) {
+static int compare_routes_by_stops(t_route *route1,
+                                   t_route *route2,
+                                   t_stops_list *stops) {
+    if (!route1) {
+        return route2 ? -1 : 0;
+    } else if (!route2) {
         return 1;
     }
 
-    return 0;
-}
-
-static int compare_routes_by_stops(t_routes_list *route1, t_routes_list *route2, t_stops_list *stops) {
-    t_route *stops1 = route1->data;
-    t_route *stops2 = route2->data;
-
-    while (stops1 != NULL && stops2 != NULL) {
-        int order = compare_stops_order(stops, stops1->data->name, stops2->data->name);
+    while (route1 && route2) {
+        int order = get_stops_indexes_diff(stops, route1->data->name, route2->data->name);
 
         if (order != 0) {
             return order;
         }
 
-        stops1 = stops1->next;
-        stops2 = stops2->next;
-    }
-
-    if (stops1 == NULL && stops2 != NULL) {
-        return -1;
-    } else if (stops1 != NULL && stops2 == NULL) {
-        return 1;
+        route1 = route1->next;
+        route2 = route2->next;
     }
 
     return 0;
 }
 
-static void insert_sorted_route(t_routes_list **sorted_routes, t_routes_list *current_route, t_stops_list *stops) {
-    t_routes_list *prev = NULL;
-    t_routes_list *current = *sorted_routes;
-
-    while (current != NULL && compare_routes_by_stops(current_route, current, stops) > 0) {
-        prev = current;
-        current = current->next;
+static int compare_paths_by_stops(t_path *path1,
+                                  t_path *path2,
+                                  t_stops_list *stops) {
+    if (!path1) {
+        return path2 ? -1 : 0;
+    } else if (!path2) {
+        return 1;
     }
 
-    if (prev == NULL) {
-        current_route->next = *sorted_routes;
-        *sorted_routes = current_route;
-    } else {
-        prev->next = current_route;
-        current_route->next = current;
-    }
+    int from_diff = get_stops_indexes_diff(stops, path1->from, path2->from);
+    int to_diff = get_stops_indexes_diff(stops, path1->to, path2->to);
+
+    return from_diff == 0 ? to_diff : from_diff;
 }
 
 static void sort_routes_in_path(t_path *path, t_stops_list *stops) {
-    t_routes_list *sorted_routes = NULL;
+    for (t_routes_list *index = path->routes; index; index = index->next) {
+        t_routes_list *biggest = index;
 
-    while (path->routes != NULL) {
-        t_routes_list *current_route = path->routes;
-        path->routes = path->routes->next;
-
-        insert_sorted_route(&sorted_routes, current_route, stops);
+        for (t_routes_list *current = index->next; current; current = current->next) {
+            if (compare_routes_by_stops(biggest->data, current->data, stops) < 0) {
+                biggest = current;
+            }
+        }
+        if (biggest != index) {
+            swap_nodes((t_list *) biggest, (t_list *) index);
+        }
     }
-
-    path->routes = sorted_routes;
 }
 
-void mx_sort_paths_in_fifo_order(t_paths_list *paths, t_stops_list *stops) {
-    for (t_paths_list *current_path = paths; current_path != NULL; current_path = current_path->next) {
-        sort_routes_in_path(current_path->data, stops);
+void mx_sort_paths_in_stops_order(t_paths_list *paths, t_stops_list *stops) {
+    for (t_paths_list *index = paths; index; index = index->next) {
+        t_paths_list *biggest = index;
 
-        t_paths_list *temp = current_path;
-        int current_from_index = get_stop_index(stops, current_path->data->from);
-        int current_to_index = get_stop_index(stops, current_path->data->to);
-
-        while (temp->next != NULL) {
-            int next_from_index = get_stop_index(stops, temp->next->data->from);
-            int next_to_index = get_stop_index(stops, temp->next->data->to);
-
-            if (next_from_index < current_from_index ||
-                (next_from_index == current_from_index && next_to_index < current_to_index)) {
-                swap_paths(temp, temp->next);
-                current_from_index = next_from_index;
-                current_to_index = next_to_index;
+        for (t_paths_list *current = index->next; current; current = current->next) {
+            if (compare_paths_by_stops(biggest->data, current->data, stops) < 0) {
+                biggest = current;
             }
-
-            temp = temp->next;
         }
+        if (biggest != index) {
+            swap_nodes((t_list *) biggest, (t_list *) index);
+        }
+        sort_routes_in_path(index->data, stops);
     }
 }
 

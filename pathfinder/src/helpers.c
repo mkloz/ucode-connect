@@ -1,16 +1,16 @@
 #include "helpers.h"
 
-t_list *mx_list_find_where(t_list *list, void *data, bool (*is_equal)(void *data, void *expected)) {
+t_list *mx_list_find_where(t_list *list, void *data, t_comp_func is_equal) {
     t_list *current = list;
 
     while (current != NULL) {
         if (is_equal(current->data, data)) {
-            return current; // Found the data, return a pointer to the element
+            return current;
         }
         current = current->next;
     }
 
-    return NULL; // Data not found in the list
+    return NULL;
 }
 
 void mx_concat_lists(t_list **list1, t_list **list2) {
@@ -30,11 +30,6 @@ void mx_concat_lists(t_list **list1, t_list **list2) {
     current->next = *list2;
     *list2 = NULL;
 }
-//
-//t_list *mx_get_last(t_list *list) {
-//    while (list->next) list = list->next;
-//    return list;
-//}
 
 void mx_clear_list(t_list **list) {
     if (*list == NULL

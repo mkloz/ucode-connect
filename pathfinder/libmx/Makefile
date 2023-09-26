@@ -4,27 +4,28 @@ INC_DIR= -Iinc
 INC= $(wildcard inc/*.h)
 SRC= $(wildcard src/*.c)
 OBJ= $(subst src/,obj/,$(SRC:%.c=%.o))
-LIB_NAMES=libmx.a
-LIBMX=LIBMX
+LIBMX=libmx.a
 
 all: install #RUN
 
-RUN:
+run: install
 	$(CC) main.c $(INC_DIR) -L. -lmx -o out
 	./out
+
 install: $(LIBMX)
 
 $(subst src/,,$(SRC)):
 	$(CC) $(CFLAGS) -c "src/$@" -o "obj/$(subst .c,.o,$@)" $(INC_DIR)
 
 $(LIBMX): precomp $(subst src/,,$(SRC))
-	ar rcs $(LIB_NAMES) obj/*.o
+	ar rcs $(LIBMX) obj/*.o
 
 precomp:
+	rm -rf obj
 	mkdir -p obj
 
 uninstall: clean
-	rm -f $(LIB_PATHS)
+	rm -f $(LIBMX)
 
 clean:
 	rm -rf obj

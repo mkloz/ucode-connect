@@ -8,4 +8,5 @@
 #include <limits.h>
 #include <stdbool.h>
 
+typedef bool (t_comp_func)(void *, void *);
 #endif
