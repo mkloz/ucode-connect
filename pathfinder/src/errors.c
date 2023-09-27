@@ -16,7 +16,7 @@ static void file_is_empty_error(char *filename) {
     mx_printerr(" is empty\n");
 }
 
-void mx_print_error(enum error error) {
+void mx_print_error(enum e_error error) {
     switch (error) {
         case USAGE_ERR:
             mx_printerr(ERROR_USAGE);
@@ -36,13 +36,13 @@ void mx_print_error(enum error error) {
     }
 }
 
-void mx_throw_error(enum error error) {
+void mx_throw_error(enum e_error error) {
     mx_print_error(error);
 
     exit(EXIT_FAILURE);
 }
 
-void mx_throw_file_err(enum file_error error, char *filename) {
+void mx_throw_file_err(enum e_file_error error, char *filename) {
     switch (error) {
         case FILE_NOT_EXIST_ERR:
             file_not_exist_error(filename);

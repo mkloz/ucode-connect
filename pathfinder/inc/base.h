@@ -3,10 +3,8 @@
 
 #include "list.h"
 #include "errors.h"
-#include <unistd.h>
 #include "libmx.h"
-#include <limits.h>
+#include <unistd.h>
 #include <stdbool.h>
 
-typedef bool (t_comp_func)(void *, void *);
 #endif

@@ -5,10 +5,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <limits.h>
 
 #ifdef __MACH__
 #include <malloc/malloc.h>
+
 #else
 
 #include <malloc.h>
@@ -16,19 +16,44 @@
 #define malloc_size malloc_usable_size
 #endif
 
+#ifndef INT_MIN
+#define INT_MIN (-__INT_MAX__ - 1)
+#endif
+
+#ifndef INT_MAX
+#define INT_MAX (__INT_MAX__)
+#endif
+
+#ifndef INT_MIN_STRING
 #define INT_MIN_STRING "-2147483648"
+#endif
+
+#ifndef INT_MAX_STRING
+#define INT_MAX_STRING "2147483647"
+#endif
+
+typedef struct s_list {
+    void *data;
+    struct s_list *next;
+} t_list;
+
+typedef bool (t_comp_func)(void *, void *);
+typedef bool (t_func)(void *);
 
 //Extra functions - helpers
-int mx_atoi(const char *str);
 bool mx_isdigit(int c);
 bool mx_isalpha(char c);
 bool mx_islower(int c);
 bool mx_isupper(int c);
 bool mx_isspace(char c);
 int mx_strncmp(const char *s1, const char *s2, int n);
+void mx_clear_list(t_list **list);
+t_list *mx_list_find_where(t_list *list, void *data, t_comp_func is_equal);
+void mx_concat_lists(t_list **list1, t_list **list2);
 
 //Act: Utils pack
 
+int mx_atoi(const char *str);
 void mx_printchar(char c);
 void mx_print_unicode(wchar_t c);
 void mx_printstr(const char *s);
@@ -66,10 +91,10 @@ char **mx_strsplit(const char *s, char c);
 char *mx_strjoin(const char *s1, const char *s2);
 char *mx_file_to_str(const char *file);
 char *mx_replace_substr(const char *str, const char *sub, const char *replace);
+
 int mx_read_line(char **lineptr, size_t buf_size, char delim, const int fd);
 
 //Act: Memory pack
-
 void *mx_memset(void *b, int c, size_t len);
 void *mx_memcpy(void *restrict dst, const void *restrict src, size_t n);
 void *mx_memccpy(void *restrict dst, const void *restrict src, int c, size_t n);
@@ -80,17 +105,12 @@ void *mx_memmem(const void *big, size_t big_len, const void *little, size_t litt
 void *mx_memmove(void *dst, const void *src, size_t len);
 void *mx_realloc(void *ptr, size_t size);
 
-//Act: List pack
-typedef struct s_list {
-    void *data;
-    struct s_list *next;
-} t_list;
-
+//List pack
 t_list *mx_create_node(void *data);
 void mx_push_front(t_list **list, void *data);
 void mx_push_back(t_list **list, void *data);
 void mx_pop_front(t_list **head);
 void mx_pop_back(t_list **head);
 int mx_list_size(t_list *list);
-t_list *mx_sort_list(t_list *lst, bool(*cmp)(void *, void *));
+t_list *mx_sort_list(t_list *lst, t_comp_func);
 #endif

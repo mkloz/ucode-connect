@@ -4,7 +4,6 @@
 #include "libmx.h"
 #include "graph.h"
 #include "path.h"
-#include "helpers.h"
 #include "errors.h"
 
 #define BOUNDARY_SIZE 40

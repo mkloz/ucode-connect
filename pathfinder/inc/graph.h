@@ -1,7 +1,6 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
-#include "helpers.h"
 #include "base.h"
 
 typedef struct s_stops_connection t_stops_connection;
