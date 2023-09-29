@@ -1,36 +1,44 @@
-CC=clang
-CFLAGS= -std=c11 -Wall -Wextra -Werror -Wpedantic
-INC_DIR= -Iinc
-INC= $(wildcard inc/*.h)
-SRC= $(wildcard src/*.c)
-OBJ= $(subst src/,obj/,$(SRC:%.c=%.o))
-LIBMX=libmx.a
+CC = clang
+CFLAGS = -std=c11 -Wall -Wextra -Werror -Wpedantic
 
-all: install #RUN
+INC_DIR = inc
+SRC_DIR = src
+OBJ_DIR = obj
+
+LIBMX = libmx.a
+
+INC := -I$(INC_DIR)
+SRC := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/**/*.c)
+OBJ := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC))
+LINK = -L. -lmx
+
+.PHONY: all run install precomp uninstall clean reinstall
+
+all: install
 
 run: install
-	$(CC) main.c $(INC_DIR) -L. -lmx -o out
-	./out
+	@$(CC) $(CFLAGS) main.c $(LINK)
 
 install: $(LIBMX)
+	@printf "\r\033[K\033[01;36m$(LIBMX) $@ \033[33;1mdone\033[01;36m\n"
 
-$(subst src/,,$(SRC)):
-	$(CC) $(CFLAGS) -c "src/$@" -o "obj/$(subst .c,.o,$@)" $(INC_DIR)
+$(OBJ): $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
+	@printf "\r\033[K\033[01;36m$(LIBMX) \033[33;1mcompiling \033[01;36m$<"
+	@$(CC) $(CFLAGS) -c $< -o $@ $(INC)
 
-$(LIBMX): precomp $(subst src/,,$(SRC))
-	ar rcs $(LIBMX) obj/*.o
+$(LIBMX): $(OBJ)
+	@ar rcs $(LIBMX) $(OBJ)
+	@printf "\r\033[K\033[01;36m$@ \033[32;1mcreated \033[01;36m\n"
 
-precomp:
-	rm -rf obj
-	mkdir -p obj
-
-uninstall: clean
-	rm -f $(LIBMX)
+uninstall:
+	@rm -rf $(OBJ_DIR)
+	@rm -rf $(LIBMX)
+	@printf "\r\033[K\033[01;36m$(LIBMX) \033[31;1muninstalled\033[01;36m\n"
 
 clean:
-	rm -rf obj
+	@rm -rf $(OBJ_DIR)
+	@printf "\r\033[K$(OBJ_DIR) in $(LIBMX) \033[31;1mcleaned\033[01;36m\n"
+
 
 reinstall: uninstall install
-
-.PHONY: all uninstall clean reinstall precomp install
-

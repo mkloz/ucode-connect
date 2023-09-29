@@ -20,6 +20,23 @@ static bool is_numeric(const char *line) {
     return true;
 }
 
+static int parse_first_line(int fd, char *name, int line) {
+    char *str = NULL;
+    int readed = mx_read_line(&str, 1, '\n', fd);
+
+    if (readed == -1) mx_throw_file_err(FILE_IS_EMPTY_ERR, name);
+
+    int cities_count = mx_atoi(str);
+
+    if (cities_count <= 0
+        || !is_numeric(str))
+        mx_throw_invalid_line_err(line);
+
+    mx_strdel(&str);
+
+    return cities_count;
+}
+
 static void parse_line(t_graph *graph, char *line, int line_number) {
     int comma = mx_get_char_index(line, ',');
     int dash = mx_get_char_index(line, '-');
@@ -43,30 +60,7 @@ static void parse_line(t_graph *graph, char *line, int line_number) {
     mx_push_connection(graph, island1, island2, distance);
 }
 
-t_graph *mx_parse_file(char *name) {
-    t_graph *graph = mx_create_graph();
-    char *str = NULL;
-    int line_number = 1;
-    int fd = open(name, O_RDONLY);
-
-    if (fd < 0) mx_throw_file_err(FILE_NOT_EXIST_ERR, name);
-
-    int readed = mx_read_line(&str, 1, '\n', fd);
-
-    if (readed == -1) mx_throw_file_err(FILE_IS_EMPTY_ERR, name);
-
-    int cities_count = mx_atoi(str);
-
-    if (cities_count <= 0
-        || !is_numeric(str))
-        mx_throw_invalid_line_err(line_number);
-    mx_strdel(&str);
-
-    while (mx_read_line(&str, 1, '\n', fd) >= 0) {
-        line_number++;
-        parse_line(graph, str, line_number);
-        mx_strdel(&str);
-    }
+static void handle_low_errors(t_graph *graph, int cities_count) {
     if (mx_list_size((t_list *) graph->stops) != cities_count)
         mx_throw_error(INVALID_ISLANDS_COUNT_ERR);
 
@@ -78,5 +72,26 @@ t_graph *mx_parse_file(char *name) {
     }
 
     if (sum > INT_MAX) mx_throw_error(BRIDGES_SUM_TOO_BIG_ERR);
+}
+
+t_graph *mx_parse_file(char *name) {
+    t_graph *graph = mx_create_graph();
+    char *str = NULL;
+    int line_number = 1;
+    int fd = open(name, O_RDONLY);
+    int readed;
+
+    if (fd < 0) mx_throw_file_err(FILE_NOT_EXIST_ERR, name);
+    int cities_count = parse_first_line(fd, name, line_number);
+
+    while ((readed = mx_read_line(&str, 1, '\n', fd)) >= -1) {
+        line_number++;
+        parse_line(graph, str, line_number);
+        mx_strdel(&str);
+
+        if (readed == -1) break;
+    }
+    handle_low_errors(graph, cities_count);
+
     return graph;
 }

@@ -1,43 +1,51 @@
-CC=clang
-CFLAGS= -std=c11 -Wall -Wextra -Werror -Wpedantic
-INC= $(wildcard inc/*.h)
-SRC= $(wildcard src/*.c)
-OBJ= $(subst src/,obj/,$(SRC:%.c=%.o))
-LIBMX_PATH=libmx
-LIBMX=libmx.a
-PATHFINDER=pathfinder
-INC_DIR= -Iinc -I$(LIBMX_PATH)/inc
-LINK_DIR= -L$(LIBMX_PATH) -lmx
+CC = clang
+CFLAGS = -std=c11 -Wall -Wextra -Werror -Wpedantic
 
-all: install
+INC_DIR = inc
+SRC_DIR = src
+OBJ_DIR = obj
+
+LIBMX_PATH = libmx
+LIBMX = libmx.a
+PATHFINDER = pathfinder
+
+INC := -I$(INC_DIR) -I$(LIBMX_PATH)/inc
+SRC := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/**/*.c)
+OBJ := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC))
+LINK := -L$(LIBMX_PATH) -lmx
+
+.PHONY: all uninstall clean reinstall install run
+
+all: reinstall
 
 run: install
 	./$(PATHFINDER)
 
 install: $(LIBMX) $(PATHFINDER)
+	@printf "\r\033[K\033[01;36m$(PATHFINDER) $@ \033[33;1mdone\033[01;36m\n"
 
-$(subst src/,,$(SRC)):
-	$(CC) $(CFLAGS) -c "src/$@" -o "obj/$(subst .c,.o,$@)" $(INC_DIR)
+
+$(OBJ): $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
+	@printf "\r\033[K\033[01;36m$(PATHFINDER) \033[33;1mcompiling \033[01;36m$<"
+	@$(CC) $(CFLAGS) -c $< -o $@ $(INC)
 
 $(LIBMX):
-	make -sC $(LIBMX_PATH)
+	@$(MAKE) -sC $(LIBMX_PATH) install
 
-$(PATHFINDER): precomp $(subst src/,,$(SRC))
-	$(CC) $(CFLAGS) -o $(PATHFINDER) obj/*.o $(INC_DIR) $(LINK_DIR)
+$(PATHFINDER): $(OBJ)
+	@$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LINK)
+	@printf "\r\033[K\033[01;36m$@ \033[32;1mcreated\033[01;36m\n"
 
-precomp:
-	rm -rf obj
-	mkdir -p obj
-
-uninstall: clean
-	make -sC $(LIBMX_PATH) uninstall
-	rm -rf $(PATHFINDER)
+uninstall:
+	@$(MAKE) -sC $(LIBMX_PATH) uninstall
+	@rm -rf $(OBJ_DIR)
+	@rm -rf $(PATHFINDER)
+	@printf "\r\033[K$(PATHFINDER) \033[31;1muninstalled\033[01;36m\n"
 
 clean:
-	make -sC $(LIBMX_PATH) clean
-	rm -rf obj
+	@$(MAKE) -sC $(LIBMX_PATH) clean
+	@rm -rf $(OBJ_DIR)
+	@printf "\r\033[K$(OBJ_DIR) in $(PATHFINDER) \033[31;1mcleaned\033[01;36m\n"
 
 reinstall: uninstall install
-
-.PHONY: all uninstall clean reinstall precomp install run
-

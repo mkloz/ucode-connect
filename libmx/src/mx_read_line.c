@@ -26,9 +26,12 @@ int mx_read_line(char **lineptr, size_t buf_size, char delim, const int fd) {
 
     mx_strdel(&buffer);
 
-    if (bytes_read <= 0) {
+    if (bytes_read == 0) {
+        *lineptr = res;
+        return  -1;
+    } else if(bytes_read < 0) {
         mx_strdel(&res);
-        return bytes_read == 0 ? -1 : -2;
+        return -2;
     }
 
     return mx_strlen(*lineptr = res);
