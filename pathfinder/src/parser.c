@@ -71,7 +71,7 @@ static void handle_low_errors(t_graph *graph, int cities_count) {
         sum += list->data->distance;
     }
 
-    if (sum > INT_MAX) mx_throw_error(BRIDGES_SUM_TOO_BIG_ERR);
+    if (sum > MX_INT_MAX) mx_throw_error(BRIDGES_SUM_TOO_BIG_ERR);
 }
 
 t_graph *mx_parse_file(char *name) {
@@ -80,18 +80,18 @@ t_graph *mx_parse_file(char *name) {
     int line_number = 1;
     int fd = open(name, O_RDONLY);
     int readed;
-
     if (fd < 0) mx_throw_file_err(FILE_NOT_EXIST_ERR, name);
     int cities_count = parse_first_line(fd, name, line_number);
 
-    while ((readed = mx_read_line(&str, 1, '\n', fd)) >= -1) {
+    while ((readed = mx_read_line(&str, 1, '\n', fd)) >= -1
+           && (mx_strlen(str) > 0 || readed == 0)) {
         line_number++;
         parse_line(graph, str, line_number);
         mx_strdel(&str);
 
-        if (readed == -1) break;
     }
     handle_low_errors(graph, cities_count);
+    close(fd);
 
     return graph;
 }

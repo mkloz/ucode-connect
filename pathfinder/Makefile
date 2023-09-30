@@ -9,10 +9,18 @@ LIBMX_PATH = libmx
 LIBMX = libmx.a
 PATHFINDER = pathfinder
 
-INC := -I$(INC_DIR) -I$(LIBMX_PATH)/inc
-SRC := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/**/*.c)
-OBJ := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC))
-LINK := -L$(LIBMX_PATH) -lmx
+INC_FILES := -I$(INC_DIR) -I$(LIBMX_PATH)/inc
+SRC_FILES := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/**/*.c)
+OBJ_FILES := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC_FILES))
+LINKS := -L$(LIBMX_PATH) -lmx
+# Define color variables
+RED = \033[31;1m
+GREEN = \033[32;1m
+YELLOW = \033[33;1m
+CYAN = \033[36;1m
+#Other color features
+BOLD = \033[1m
+CLEAN_LINE = \033[K
 
 .PHONY: all uninstall clean reinstall install run
 
@@ -22,30 +30,31 @@ run: install
 	./$(PATHFINDER)
 
 install: $(LIBMX) $(PATHFINDER)
-	@printf "\r\033[K\033[01;36m$(PATHFINDER) $@ \033[33;1mdone\033[01;36m\n"
+	@printf "\r$(CLEAN_LINE)$(CYAN)$(BOLD)$(PATHFINDER) $@ $(YELLOW)done$(CYAN)\n"
 
 
-$(OBJ): $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+$(OBJ_FILES): $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
-	@printf "\r\033[K\033[01;36m$(PATHFINDER) \033[33;1mcompiling \033[01;36m$<"
-	@$(CC) $(CFLAGS) -c $< -o $@ $(INC)
+	@printf "\r$(CLEAN_LINE)$(CYAN)$(BOLD)$(PATHFINDER) $(YELLOW)compiling $(CYAN)$<"
+	@$(CC) $(CFLAGS) -c $< -o $@ $(INC_FILES)
 
 $(LIBMX):
 	@$(MAKE) -sC $(LIBMX_PATH) install
 
-$(PATHFINDER): $(OBJ)
-	@$(CC) $(CFLAGS) -o $@ $^ $(INC) $(LINK)
-	@printf "\r\033[K\033[01;36m$@ \033[32;1mcreated\033[01;36m\n"
+$(PATHFINDER): $(OBJ_FILES)
+	@printf "\r$(CLEAN_LINE)$(CYAN)$(BOLD)$@ $(YELLOW)files compiled$(CYAN)\n"
+	@$(CC) $(CFLAGS) -o $@ $^ $(INC_FILES) $(LINKS)
+	@printf "\r$(CLEAN_LINE)$(CYAN)$(BOLD)$@ $(GREEN)created$(CYAN)\n"
 
 uninstall:
 	@$(MAKE) -sC $(LIBMX_PATH) uninstall
 	@rm -rf $(OBJ_DIR)
 	@rm -rf $(PATHFINDER)
-	@printf "\r\033[K$(PATHFINDER) \033[31;1muninstalled\033[01;36m\n"
+	@printf "\r$(CLEAN_LINE)$(PATHFINDER) $(RED)uninstalled$(CYAN)\n"
 
 clean:
 	@$(MAKE) -sC $(LIBMX_PATH) clean
 	@rm -rf $(OBJ_DIR)
-	@printf "\r\033[K$(OBJ_DIR) in $(PATHFINDER) \033[31;1mcleaned\033[01;36m\n"
+	@printf "\r$(CLEAN_LINE)$(OBJ_DIR) in $(PATHFINDER) $(RED)cleaned$(CYAN)\n"
 
 reinstall: uninstall install

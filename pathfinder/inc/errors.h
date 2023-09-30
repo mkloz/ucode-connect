@@ -3,10 +3,10 @@
 
 #include "base.h"
 
-#define ERROR_USAGE "usage: ./pathfinder [filename]\n"
-#define ERROR_DUPLICATED_BRIDGES "error: duplicate bridges\n"
-#define ERROR_INVALID_ISLANDS_NUM "error: invalid number of islands\n"
-#define ERROR_BRIDGES_SUM_TOO_BIG "error: sum of bridges lengths is too big\n"
+#define MX_ERROR_USAGE "usage: ./pathfinder [filename]\n"
+#define MX_ERROR_DUPLICATED_BRIDGES "error: duplicate bridges\n"
+#define MX_ERROR_INVALID_ISLANDS_NUM "error: invalid number of islands\n"
+#define MX_ERROR_BRIDGES_SUM_TOO_BIG "error: sum of bridges lengths is too big\n"
 
 enum e_error {
     USAGE_ERR,

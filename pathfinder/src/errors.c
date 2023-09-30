@@ -19,16 +19,16 @@ static void file_is_empty_error(char *filename) {
 void mx_print_error(enum e_error error) {
     switch (error) {
         case USAGE_ERR:
-            mx_printerr(ERROR_USAGE);
+            mx_printerr(MX_ERROR_USAGE);
             break;
         case INVALID_ISLANDS_COUNT_ERR:
-            mx_printerr(ERROR_INVALID_ISLANDS_NUM);
+            mx_printerr(MX_ERROR_INVALID_ISLANDS_NUM);
             break;
         case DUPLICATED_BRIDGES_ERR:
-            mx_printerr(ERROR_DUPLICATED_BRIDGES);
+            mx_printerr(MX_ERROR_DUPLICATED_BRIDGES);
             break;
         case BRIDGES_SUM_TOO_BIG_ERR:
-            mx_printerr(ERROR_BRIDGES_SUM_TOO_BIG);
+            mx_printerr(MX_ERROR_BRIDGES_SUM_TOO_BIG);
             break;
         default: {
             mx_printerr("NOT_SUPPORTED_ERR\n");

@@ -6,8 +6,8 @@ void mx_printint(int n) {
         return;
     }
 
-    if (n == INT_MIN) {
-        write(STDOUT_FILENO, INT_MIN_STRING, 11);
+    if (n == MX_INT_MIN) {
+        write(STDOUT_FILENO, MX_INT_MIN_STRING, 11);
         return;
     }
 

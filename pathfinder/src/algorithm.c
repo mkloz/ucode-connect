@@ -29,8 +29,8 @@ static void add_neighbors_to_queue(t_stops_list **queue, t_stop *current) {
         if (neighbor->is_visited) continue;
 
         int distance =
-                current->distance_from_start == INT_MAX ?
-                INT_MAX : current->distance_from_start + conn->data->distance;
+                current->distance_from_start == MX_INT_MAX ?
+                MX_INT_MAX : current->distance_from_start + conn->data->distance;
 
         if (neighbor->distance_from_start > distance) {
             neighbor->distance_from_start = distance;
@@ -71,7 +71,7 @@ t_paths_list *mx_find_all_routes(t_graph *graph) {
     for (t_stops_list *el = graph->stops; el != NULL; el = el->next) {
         for (t_stops_list *p_list = graph->stops;
              p_list != NULL; p_list = p_list->next) {
-            p_list->data->distance_from_start = INT_MAX;
+            p_list->data->distance_from_start = MX_INT_MAX;
             mx_clear_list((t_list **) &p_list->data->previous_stops);
             p_list->data->is_visited = false;
         }

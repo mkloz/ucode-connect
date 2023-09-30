@@ -11,7 +11,7 @@ t_stop *mx_init_empty_stop(char *name) {
     t_stop *stop = malloc(sizeof(t_stop));
     stop->name = name;
     stop->connections = NULL;
-    stop->distance_from_start = INT_MAX;
+    stop->distance_from_start = MX_INT_MAX;
     stop->previous_stops = NULL;
     stop->is_visited = false;
 
