@@ -1,10 +1,11 @@
 #!/bin/bash
-
+#non zero for printing output
+PRINT_CASES=0
 # ANSI color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No color
-
+YELLOW='\033[33;1m'
 # Path to your program executables
 PATHFINDER="./pathfinder"
 TEST_PATHFINDER="./test_pathfinder"
@@ -38,12 +39,16 @@ run_and_compare() {
         echo -e "${RED}Exit codes differ (${original_exit_code}) - (${test_exit_code}).${NC}"
     fi
     # Compare the outputs using diff
+    if [ "$PRINT_CASES" -ne 0 ]; then
+      echo -e "${YELLOW} $original_output${NC}"
+    fi
     if [ "$original_output" = "$test_output" ]; then
         echo -e "${GREEN}Outputs match.${NC}"
         ((SUCCESS_COUNT++))
     else
-        echo -e "${RED}Outputs differ.${NC}"
+        echo -e "${RED}Outputs differ.${YELLOW}"
         diff <(echo "$original_output") <(echo "$test_output")
+        echo -e "${NC}"
         ((FAILED_COUNT++))
     fi
 
@@ -53,14 +58,7 @@ run_and_compare() {
     echo "--------------------------------------"
 }
 
-# Define expected outputs for the tests
-EXPECTED_OUTPUTS=(
-    "usage: ./pathfinder [filename]"
-    "usage: ./pathfinder [filename]"
-    "error: file fake does not exist"
-)
-
-echo "${NC}Testing without parameters..."
+echo -e "${NC}Testing without parameters..."
 run_and_compare ""
 echo "--------------------------------------"
 

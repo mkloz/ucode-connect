@@ -20,19 +20,12 @@ static bool is_numeric(const char *line) {
     return true;
 }
 
-static int parse_first_line(int fd, char *name, int line) {
-    char *str = NULL;
-    int readed = mx_read_line(&str, 1, '\n', fd);
-
-    if (readed == -1) mx_throw_file_err(FILE_IS_EMPTY_ERR, name);
-
-    int cities_count = mx_atoi(str);
+static int parse_first_line(char *line) {
+    int cities_count = mx_atoi(line);
 
     if (cities_count <= 0
-        || !is_numeric(str))
-        mx_throw_invalid_line_err(line);
-
-    mx_strdel(&str);
+        || !is_numeric(line))
+        mx_throw_invalid_line_err(1);
 
     return cities_count;
 }
@@ -60,6 +53,18 @@ static void parse_line(t_graph *graph, char *line, int line_number) {
     mx_push_connection(graph, island1, island2, distance);
 }
 
+static char **get_lines(char *filename) {
+    char *file = mx_file_to_str(filename);
+
+    if (file == NULL) mx_throw_file_err(FILE_NOT_EXIST_ERR, filename);
+    if (mx_strlen(file) == 0) mx_throw_file_err(FILE_IS_EMPTY_ERR, filename);
+
+    char **res = mx_strsplit(file, '\n');
+    mx_strdel(&file);
+
+    return res;
+}
+
 static void handle_low_errors(t_graph *graph, int cities_count) {
     if (mx_list_size((t_list *) graph->stops) != cities_count)
         mx_throw_error(INVALID_ISLANDS_COUNT_ERR);
@@ -76,22 +81,14 @@ static void handle_low_errors(t_graph *graph, int cities_count) {
 
 t_graph *mx_parse_file(char *name) {
     t_graph *graph = mx_create_graph();
-    char *str = NULL;
-    int line_number = 1;
-    int fd = open(name, O_RDONLY);
-    int readed;
-    if (fd < 0) mx_throw_file_err(FILE_NOT_EXIST_ERR, name);
-    int cities_count = parse_first_line(fd, name, line_number);
+    char **lines = get_lines(name);
+    int cities_count = parse_first_line(lines[0]);
 
-    while ((readed = mx_read_line(&str, 1, '\n', fd)) >= -1
-           && (mx_strlen(str) > 0 || readed == 0)) {
-        line_number++;
-        parse_line(graph, str, line_number);
-        mx_strdel(&str);
-
+    for (int i = 1; lines[i] != NULL; i++) {
+        parse_line(graph, lines[i], i + 1);
     }
+    mx_del_strarr(&lines);
     handle_low_errors(graph, cities_count);
-    close(fd);
 
     return graph;
 }
