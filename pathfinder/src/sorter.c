@@ -64,10 +64,10 @@ static int compare_paths_by_stops(t_path *path1,
 }
 
 static void sort_routes_in_path(t_path *path, t_stops_list *stops) {
-    for (t_routes_list *index = path->routes; index; index = index->next) {
+    for (t_routes_list *index = path->routes; index != NULL; index = index->next) {
         t_routes_list *biggest = index;
 
-        for (t_routes_list *current = index->next; current; current = current->next) {
+        for (t_routes_list *current = index->next; current != NULL; current = current->next) {
             if (compare_routes_by_stops(biggest->data, current->data, stops) < 0) {
                 biggest = current;
             }
@@ -79,10 +79,10 @@ static void sort_routes_in_path(t_path *path, t_stops_list *stops) {
 }
 
 void mx_sort_paths_in_stops_order(t_paths_list *paths, t_stops_list *stops) {
-    for (t_paths_list *index = paths; index; index = index->next) {
+    for (t_paths_list *index = paths; index != NULL; index = index->next) {
         t_paths_list *biggest = index;
 
-        for (t_paths_list *current = index->next; current; current = current->next) {
+        for (t_paths_list *current = index->next; current != NULL; current = current->next) {
             if (compare_paths_by_stops(biggest->data, current->data, stops) < 0) {
                 biggest = current;
             }

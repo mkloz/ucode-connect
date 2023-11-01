@@ -1,8 +1,8 @@
 #include "libmx.h"
 
-int mx_atoi(const char *str) {
+long mx_atoi(const char *str) {
     int i = -1;
-    int result = 0;
+    long result = 0;
 
     while (str[++i]) {
         if (mx_isdigit(str[i]))

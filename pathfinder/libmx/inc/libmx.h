@@ -41,6 +41,7 @@ typedef bool (t_comp_func)(void *, void *);
 typedef bool (t_func)(void *);
 
 //Extra functions - helpers
+long mx_atoi(const char *str);
 bool mx_isdigit(int c);
 bool mx_isalpha(char c);
 bool mx_islower(int c);
@@ -52,8 +53,6 @@ t_list *mx_list_find_where(t_list *list, void *data, t_comp_func is_equal);
 void mx_concat_lists(t_list **list1, t_list **list2);
 
 //Act: Utils pack
-
-int mx_atoi(const char *str);
 void mx_printchar(char c);
 void mx_print_unicode(wchar_t c);
 void mx_printstr(const char *s);
