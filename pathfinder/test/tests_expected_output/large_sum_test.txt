@@ -1,0 +1,1 @@
+error: sum of bridges lengths is too big

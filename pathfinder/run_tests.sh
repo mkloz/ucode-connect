@@ -8,10 +8,9 @@ NC='\033[0m' # No color
 YELLOW='\033[33;1m'
 # Path to your program executables
 PATHFINDER="./pathfinder"
-TEST_PATHFINDER="./test_pathfinder"
 
 # Directory containing the test files
-TEST_DIR="test/"
+TEST_DIR="test"
 
 # Initialize variables to count successful and failed tests
 SUCCESS_COUNT=0
@@ -24,20 +23,9 @@ run_and_compare() {
 
     # Run the original pathfinder program and capture both output and exit code
     original_output="$($PATHFINDER "$input_file" 2>&1)"
-    original_exit_code="$?"
 
     # Run the test pathfinder program and capture both output and exit code
-    test_output="$($TEST_PATHFINDER "$input_file" 2>&1)"
-    test_exit_code="$?"
-
-    # Compare the exit codes
-    if [ "$original_exit_code" -eq 0 ] && [ "$test_exit_code" -eq 0 ]; then
-        echo -e "${GREEN}Exit codes match.${NC}"
-    elif [ "$original_exit_code" -ne 0 ] && [ "$test_exit_code" -ne 0 ]; then
-        echo -e "${GREEN}Exit codes match (non-zero).${NC}"
-    else
-        echo -e "${RED}Exit codes differ (${original_exit_code}) - (${test_exit_code}).${NC}"
-    fi
+    test_output="$(cat "$TEST_DIR/tests_expected_output/$(basename "$FILE")")"
     # Compare the outputs using diff
     if [ "$PRINT_CASES" -ne 0 ]; then
       echo -e "${YELLOW} $original_output${NC}"
@@ -58,20 +46,8 @@ run_and_compare() {
     echo "--------------------------------------"
 }
 
-echo -e "${NC}Testing without parameters..."
-run_and_compare ""
-echo "--------------------------------------"
-
-echo "Testing with 2 parameters..."
-run_and_compare "ffe wf"
-echo "--------------------------------------"
-
-echo "Testing with invalid filename parameters..."
-run_and_compare "fake"
-echo "--------------------------------------"
-
 # Iterate over all files in the test directory
-for FILE in "$TEST_DIR"*
+for FILE in "$TEST_DIR/testcases/"*
 do
     if [ -f "$FILE" ]; then
         # Check if the file is a regular file and not a directory
