@@ -1,67 +1,21 @@
-#include "../inc/uls.h"
-
-void mx_uls(char **elements, t_flags *opts) {
-	struct winsize max;
-	ioctl(0, TIOCGWINSZ, &max);
-
-	int n = 0;
-	char **directories = NULL;
-	char **files = NULL;
-
-	if (elements != NULL) {
-		for (; elements[n] != NULL; n++);
-	} else {
-		elements = (char **) malloc(1);
-		n = 1;
-		elements[0] = mx_strdup(".");
-		elements[1] = NULL;
-	}
-
-	mx_parse_elements(elements, n, &directories, &files);
-
-	if (files != NULL) {
-		if (opts->m)
-			mx_print_m(files, &max, NULL, opts);
-		else if (opts->C || opts->x)
-			mx_print(files, &max, NULL, opts);
-		else if (opts->l)
-			mx_print_l(files, NULL, opts, false);
-		if (directories != NULL)
-			mx_printchar('\n');
-		mx_del_strarr(&files);
-	}
-	if (directories != NULL) {
-		mx_print_dirs(directories, n, max, opts);
-		mx_del_strarr(&directories);
-	}
-	free(opts);
-
-	if (elements != NULL) {
-		mx_del_strarr(&elements);
-	}
-}
-
+#include "uls.h"
 
 int main(int argc, char *argv[]) {
-	t_flags *opts = (t_flags *) malloc(sizeof(t_flags));
+	int args_elements_index = 1;
+	int exit_code = EXIT_SUCCESS;
+	t_flags *flags = mx_get_flags(argv, &args_elements_index);
+	t_element **args = mx_get_names(argc, argv, args_elements_index);
 
-	mx_init_flags(opts);
-	mx_get_flags(argc, argv, opts);
-	char **elements = mx_get_elements(argc, argv);
+	mx_sort_elements(&args, flags);
 
-	if (elements != NULL) {
-		if (!opts->f) {
-			mx_sort_strarr(elements, opts);
-
-			if (opts->t)
-				mx_sort_t(elements, mx_strjoin(".", "/"), opts);
-			else if (opts->S)
-				mx_sort_S(elements, mx_strjoin(".", "/"), opts);
-		}
+	if (args) {
+		mx_dir(&args, flags);
+	}
+	if (flags->ex) {
+		exit_code = EXIT_FAILURE;
 	}
 
-	mx_uls(elements, opts);
-
-	return 0;
+	free(flags);
+	flags = NULL;
+	return exit_code;
 }
-

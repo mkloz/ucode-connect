@@ -1,340 +1,325 @@
-#include "../inc/uls.h"
+#include "uls.h"
 
-void mx_print_name(char *name, struct stat *buf, t_flags *opts) {
-	int istty = isatty(fileno(stdout));
-	if (opts->G && istty)
-		mx_set_color(buf);
-	mx_printstr(name);
-	if (istty)
-		mx_printstr(MX_COLOR_NRM);
-	if (S_ISDIR(buf->st_mode) && (opts->p || opts->F))
-		mx_printchar('/');
-	else if (S_ISFIFO(buf->st_mode) && opts->F)
-		mx_printchar('|');
-	else if (S_ISLNK(buf->st_mode) && opts->F)
-		mx_printchar('@');
-	else if ((buf->st_mode & S_IEXEC) && opts->F)
-		mx_printchar('*');
-	else if (((buf->st_mode & S_IFMT) == S_IFSOCK) && opts->F)
-		mx_printchar('=');
+static void get_user_name(t_element *print, int usr) {
+	struct passwd *pw = getpwuid(print->info.st_uid);
+	int counter = 0;
+	char *name = NULL;
+
+	if (pw)
+		name = mx_strdup(pw->pw_name);
+	else
+		name = mx_itoa(print->info.st_uid);
+	if (mx_strlen(name) == usr)
+		mx_printstr(name);
+	else if (mx_strlen(name) < usr) {
+		counter = mx_strlen(name);
+		mx_printstr(name);
+		while (counter != usr) {
+			mx_printchar(' ');
+			counter++;
+		}
+	}
+	mx_printstr("  ");
+	free(name);
 }
 
-void mx_print_m(char **elements, struct winsize *max, char *dir_path, t_flags *opts) {
-	int cur_len = 0;
-	struct stat buf;
-	for (int i = 0; elements[i] != NULL; ++i) {
-		if (cur_len + mx_strlen(elements[i]) >= max->ws_col - 1) {
-			mx_printchar('\n');
-			cur_len = 0;
+static void get_group_name(t_element *print, int group) {
+	struct group *grp = getgrgid(print->info.st_gid);
+	int counter = 0;
+	char *name = NULL;
+
+	if (grp)
+		name = mx_strdup(grp->gr_name);
+	else
+		name = mx_itoa(print->info.st_gid);
+	if (mx_strlen(name) == group)
+		mx_printstr(name);
+	else if (mx_strlen(name) < group) {
+		counter = mx_strlen(name);
+		mx_printstr(name);
+		while (counter != group) {
+			mx_printchar(' ');
+			counter++;
 		}
-		char *path = mx_strjoin(dir_path, elements[i]);
-		lstat(path, &buf);
-		free(path);
-		mx_print_name(elements[i], &buf, opts);
-		cur_len += (mx_strlen(elements[i]) + 2);
-		if (elements[i + 1] != NULL)
-			mx_printstr(", ");
-		else
-			mx_printchar('\n');
 	}
-	free(dir_path);
+	mx_printstr("  ");
+	free(name);
 }
 
-void mx_print(char **files, struct winsize *max, char *dir_path, t_flags *opts) {
-	int istty = isatty(fileno(stdout));
-
-	if (!istty || opts->one) {
-		mx_print_strarr(files, "\n");
-		return;
-	}
-	struct stat buf;
-	int max_block_size = 1;
-	int total = 0;
-
-	int len = 0;
-	for (; files[len] != NULL; len++) {
-		if (opts->s) {
-			char *path = mx_strjoin(dir_path, files[len]);
-			lstat(path, &buf);
-			total += buf.st_blocks;
-			free(path);
-			char *block_size_str = mx_itoa(buf.st_blocks);
-			if (max_block_size < mx_strlen(block_size_str))
-				max_block_size = mx_strlen(block_size_str);
-			free(block_size_str);
-		}
-	}
-	int col = mx_get_col(files, len, max->ws_col);
-	int rows = len / col;
-	if (len % col != 0) {
-		rows++;
-	}
-	int fact_len = len;
-	while (fact_len % rows != 0)
-		fact_len++;
-	col = fact_len / rows;
-
-	int k = 0;
-	bool reached_end = false;
-
-	if (opts->s) {
-		mx_printstr("total ");
-		mx_printint(total);
-		mx_printchar('\n');
-	}
-	for (int i = 0; i < rows; i++) {
-		if (opts->C)
-			k = i;
-		int el_col = 0;
-		for (int j = 0; j < col; j++) {
-			if (reached_end && j == col - 1)
-				break;
-
-			char *path = mx_strjoin(dir_path, files[k]);
-			lstat(path, &buf);
-			free(path);
-
-			if (opts->s) {
-				char *block_size = mx_itoa(buf.st_blocks);
-				int block_size_int = mx_strlen(block_size);
-				free(block_size);
-				for (int k = 0; k < max_block_size - block_size_int; k++)
-					mx_printchar(' ');
-				mx_printint(buf.st_blocks);
-				mx_printchar(' ');
-			}
-			mx_print_name(files[k], &buf, opts);
-
-			if (files[k + 1] == NULL) {
-				reached_end = true;
-				break;
-			}
-			char *tabs = "\t";
-			if (rows == 1)
-				tabs = "\t";
-			else if (j < col - 1)
-				tabs = mx_get_tabs(rows, el_col, k, files);
-
-			if (opts->C) {
-				k += rows;
-				el_col += rows;
-			} else {
-				k++;
-				el_col++;
-			}
-
-			if (j < col - 1)
-				mx_printstr(tabs);
-			if (rows > 1 && j < col - 1)
-				free(tabs);
-		}
-		mx_printchar('\n');
-	}
-
-	free(dir_path);
+static void print_link_and_color(t_element *print, t_flags *flags) {
+	if (flags->G)
+		mx_printstr_g(print);
+	else if (IS_LNK(print->info.st_mode)) {
+		mx_printstr(print->name);
+		mx_print_symb_link(print);
+	} else
+		mx_printstr(print->name);
 }
 
-void mx_print_l(char **files, char *dir_path, t_flags *opts, bool is_dir) {
-	int len = 0;
-	for (; files[len] != NULL; ++len);
-	if (opts) {};
+static void print_edit_time(t_element *print, char *t, t_flags *flags) {
+	int i = 0;
 
-	struct stat buf;
-	char *ntime = mx_strnew(100);
-	int links_amount_max_len = 0;
-	int max_size_len = mx_get_max_size_len(files, &links_amount_max_len, dir_path);
-	int max_block_size_len = 1;
-	int max_file_inode_len = 1;
-	int total = 0;
-	for (int i = 0; i < len; ++i) {
-		char *path = mx_strjoin(dir_path, files[i]);
-		stat(path, &buf);
-		total += buf.st_blocks;
-		if (opts->s) {
-			char *new_block_size = mx_itoa(buf.st_blocks);
-			if (max_block_size_len < mx_strlen(new_block_size))
-				max_block_size_len = mx_strlen(new_block_size);
-			free(new_block_size);
-		}
-		if (opts->i) {
-			char *new_file_inode_str = mx_itoa(buf.st_ino);
-			if (max_file_inode_len < mx_strlen(new_file_inode_str))
-				max_file_inode_len = mx_strlen(new_file_inode_str);
-			free(new_file_inode_str);
-		}
-	}
-	if (is_dir) {
-		mx_printstr("total ");
-		mx_printint(total);
-		mx_printchar('\n');
-	}
-
-	for (int i = 0; i < len; ++i) {
-		char *path = mx_strjoin(dir_path, files[i]);
-		lstat(path, &buf);
-
-		if (opts->i) {
-			char *file_inode_str = mx_itoa(buf.st_ino);
-			int file_inode_len = mx_strlen(file_inode_str);
-			free(file_inode_str);
-
-			for (int k = 0; k < max_file_inode_len - file_inode_len; k++) {
-				mx_printchar(' ');
-			}
-
-			mx_printint(buf.st_ino);
-			mx_printchar(' ');
-		}
-
-		if (opts->s) {
-			char *block_size = mx_itoa(buf.st_blocks);
-			int block_size_int = mx_strlen(block_size);
-			free(block_size);
-
-			for (int k = 0; k < max_block_size_len - block_size_int; k++) {
-				mx_printchar(' ');
-			}
-
-			mx_printint(buf.st_blocks);
-			mx_printchar(' ');
-		}
-
-		if (S_ISDIR(buf.st_mode))
-			mx_printchar('d');
-		if (S_ISREG(buf.st_mode))
-			mx_printchar('-');
-		if (S_ISFIFO(buf.st_mode))
-			mx_printchar('p');
-		if (S_ISLNK(buf.st_mode))
-			mx_printchar('l');
-		if (S_ISBLK(buf.st_mode))
-			mx_printchar('b');
-		if (S_ISCHR(buf.st_mode))
-			mx_printchar('c');
-		if ((buf.st_mode & S_IFMT) == S_IFSOCK)
-			mx_printchar('s');
-
-		char *permissions = mx_get_permisions_string(&buf, path);
-		mx_printstr(permissions);
-		free(permissions);
-		mx_printchar(' ');
-
-		for (int k = mx_strlen(mx_itoa(buf.st_nlink)); k < links_amount_max_len; ++k)
-			mx_printchar(' ');
-		mx_printint(buf.st_nlink);
-		mx_printchar(' ');
-
-		struct passwd *ubuf = getpwuid(buf.st_uid);
-		if (ubuf == NULL) {
-			char *mx_err = "uls";
-			perror(mx_err);
-			free(dir_path);
-			exit(1);
-		}
-		mx_printstr(ubuf->pw_name);
-		mx_printstr("  ");
-
-		if (!opts->o) {
-			struct group *gbuf = getgrgid(buf.st_gid);
-			if (gbuf == NULL) {
-				char *mx_err = "uls";
-				perror(mx_err);
-				free(dir_path);
-				exit(1);
-			}
-			mx_printstr(gbuf->gr_name);
+	if (flags->T)
+		for (i = 4; i < t[i]; i++)
+			mx_printchar(t[i]);
+	else {
+		if (1565913600 >= print->info.st_mtime) {
+			for (i = 4; i < 10; i++)
+				mx_printchar(t[i]);
 			mx_printstr("  ");
-		}
-
-		for (int k = mx_strlen(mx_itoa(buf.st_size)); k < max_size_len; ++k)
-			mx_printchar(' ');
-		mx_printint(buf.st_size);
-		mx_printchar(' ');
-
-		mx_strcpy(ntime, ctime(&buf.st_mtime));
-		if (!opts->T) {
-			char *mtime = mx_get_mtime(ntime);
-			mx_printstr(mtime);
-			free(mtime);
-		} else {
-			char *ntime_full = mx_strnew(20);
-			ntime_full = mx_strncpy(ntime_full, ntime + 4, 20);
-			mx_printstr(ntime_full);
-			free(ntime_full);
-		}
-		mx_printchar(' ');
-
-		mx_print_name(files[i], &buf, opts);
-
-		if (S_ISLNK(buf.st_mode)) {
-			char link_buf[1024];
-			ssize_t len;
-			if ((len = readlink(path, link_buf, sizeof(link_buf) - 1)) != -1) {
-				link_buf[len] = '\0';
-				mx_printstr(" -> ");
-				mx_printstr(link_buf);
-			}
-		}
-		mx_printchar('\n');
-		free(path);
+			for (i = 20; i < 24; i++)
+				mx_printchar(t[i]);
+		} else
+			for (i = 4; i < 16; i++)
+				mx_printchar(t[i]);
 	}
-	free(dir_path);
-	free(ntime);
+	mx_printstr(" ");
 }
 
-void mx_print_dirs(char **elements, int n, struct winsize max, t_flags *opts) {
-	DIR *dir = NULL;
-	struct dirent *sd = NULL;
-	char *str;
-	for (int i = 0; elements[i] != NULL; i++) {
-		if (n > 1) {
-			mx_printstr(elements[i]);
-			mx_printstr(":\n");
-			dir = opendir(elements[i]);
-		} else
-			dir = opendir(elements[i]);
+static void print_link(t_element *print, t_element_size *size) {
+	int counter = 0;
+	char *res_itoa_now = mx_itoa(print->info.st_nlink);
+	char *res_itoa_lnk = mx_itoa(size->lnk);
 
-		if (dir == NULL) {
-			mx_printerr("uls");
-			exit(1);
+	if (mx_strlen(res_itoa_now) == mx_strlen(res_itoa_lnk)) {
+		mx_printint(print->info.st_nlink);
+	} else if (mx_strlen(res_itoa_now) < mx_strlen(res_itoa_lnk)) {
+		counter = mx_strlen(res_itoa_now);
+		while (counter != mx_strlen(res_itoa_lnk)) {
+			mx_printchar(' ');
+			counter++;
 		}
-
-		str = NULL;
-		while ((sd = readdir(dir)) != NULL) {
-			str = mx_strjoin(str, sd->d_name);
-			str = mx_strjoin(str, " ");
-		}
-
-		char **files = NULL;
-		files = mx_strsplit(str, ' ');
-
-		if (!opts->f)
-			mx_sort_strarr(files, opts);
-		if ((!opts->a && opts->A) || (!opts->a && !opts->A))
-			files = mx_exclude_hidden(files, opts);
-		free(str);
-
-		if (!opts->f) {
-			if (opts->t)
-				mx_sort_t(files, mx_strjoin(elements[i], "/"), opts);
-			else if (opts->S)
-				mx_sort_S(files, mx_strjoin(elements[i], "/"), opts);
-		}
-
-		if (files != NULL) {
-			if (opts->m)
-				mx_print_m(files, &max, mx_strjoin(elements[i], "/"), opts);
-			else if (opts->C || opts->x)
-				mx_print(files, &max, mx_strjoin(elements[i], "/"), opts);
-			else
-				mx_print_l(files, mx_strjoin(elements[i], "/"), opts, true);
-
-			mx_del_strarr(&files);
-		}
-		closedir(dir);
-
-		if (n > 1 && elements[i + 1] != NULL) {
-			mx_printchar('\n');
-		}
+		mx_printint(print->info.st_nlink);
 	}
+	mx_printchar(' ');
+	free(res_itoa_now);
+	free(res_itoa_lnk);
+}
+
+void mx_print_symb_link(t_element *print) {
+	char *buf = NULL;
+	ssize_t nbytes = 0;
+	ssize_t buf_size = 0;
+
+	buf_size = print->info.st_size == 0 ? 100 : print->info.st_size + 1;
+	buf = mx_strnew(buf_size);
+	nbytes = readlink(print->path, buf, buf_size);
+	mx_printstr(" -> ");
+	if (nbytes >= 0)
+		mx_printstr(buf);
+	mx_strdel(&buf);
+}
+
+void mx_print_all(t_element *print, t_element_size *size, t_flags *fl) {
+	time_t *chtime = &print->info.st_ctime;
+	time_t *atime = &print->info.st_atime;
+	time_t *t = &print->info.st_mtime;
+
+	mx_print_permission(print);
+	print_link(print, size);
+	if ((fl->long_out && !fl->g) || (fl->o && !fl->g))
+		get_user_name(print, size->usr);
+	if ((fl->long_out && !fl->o) || (fl->g && !fl->o))
+		get_group_name(print, size->group);
+	mx_print_size(print, size);
+	if (fl->u)
+		t = atime;
+	if (fl->color_out)
+		t = chtime;
+	print_edit_time(print, ctime(t), fl);
+	print_link_and_color(print, fl);
+	mx_printchar('\n');
+}
+
+static void print_element_name(t_element *args) {
+	mx_printstr(args->name);
+	mx_printstr(MX_COLOR_RESET);
+}
+
+static int print_first_line(t_element *args) {
+	if (IS_DIR(args->info.st_mode)) {
+		mx_printstr("\033[34m");
+		print_element_name(args);
+		return 1;
+	} else if (IS_LNK(args->info.st_mode)) {
+		mx_printstr("\033[35m");
+		print_element_name(args);
+		return 1;
+	} else if (args->info.st_mode & S_IXOTH) {
+		mx_printstr(MX_COLOR_RED);
+		print_element_name(args);
+		return 1;
+	}
+	return 0;
+}
+
+static int print_second_line(t_element *args) {
+	if (IS_BLK(args->info.st_mode)) {
+		mx_printstr("\033[34;46m");
+		print_element_name(args);
+		return 1;
+	} else if (IS_CHR(args->info.st_mode)) {
+		mx_printstr("\033[34;43m");
+		print_element_name(args);
+		return 1;
+	} else if (IS_SOCK(args->info.st_mode)) {
+		mx_printstr("\033[32m");
+		print_element_name(args);
+		return 1;
+	}
+	return 0;
+}
+
+void mx_printstr_g(t_element *args) {
+	if (print_first_line(args) == 1) {
+	} else if (print_second_line(args) == 1) {
+	} else if (IS_FIFO(args->info.st_mode)) {
+		mx_printstr("\033[33m");
+		print_element_name(args);
+	} else if (IS_WHT(args->info.st_mode)) {
+		mx_printstr("\033[36m");
+		print_element_name(args);
+	} else if (IS_EXEC(args->info.st_mode)) {
+		mx_printstr("\033[31m");
+		print_element_name(args);
+	} else
+		mx_printstr(args->name);
+}
+
+static char get_file_acl(t_element *print) {
+	acl_t tmp;
+
+	if (listxattr(print->path, NULL, 0, XATTR_NOFOLLOW) > 0)
+		return ('@');
+	if ((tmp = acl_get_file(print->path, ACL_TYPE_EXTENDED))) {
+		acl_free(tmp);
+		return ('+');
+	}
+	return (' ');
+}
+
+static char check_permition(t_element *print) {
+	if (IS_DIR(print->info.st_mode))
+		return 'd';
+	if (IS_LNK(print->info.st_mode))
+		return 'l';
+	if (IS_BLK(print->info.st_mode))
+		return 'b';
+	if (IS_CHR(print->info.st_mode))
+		return 'c';
+	if (IS_FIFO(print->info.st_mode))
+		return 'p';
+	if (IS_SOCK(print->info.st_mode))
+		return 's';
+	if (IS_WHT(print->info.st_mode))
+		return 'w';
+	return '-';
+}
+
+static char check_chmode1(char chmod) {
+	if (chmod == '-')
+		return chmod = 'S';
+	else
+		return chmod = 's';
+}
+
+static char check_chmode2(char *chmod) {
+	if (chmod[9] == '-')
+		return chmod[9] = 'T';
+	else
+		return chmod[9] = 't';
+}
+
+void mx_print_permission(t_element *print) {
+	char chmod[12];
+
+	chmod[0] = check_permition(print);
+	chmod[1] = (S_IRUSR & print->info.st_mode) ? 'r' : '-';
+	chmod[2] = (S_IWUSR & print->info.st_mode) ? 'w' : '-';
+	chmod[3] = (S_IXUSR & print->info.st_mode) ? 'x' : '-';
+	chmod[4] = (S_IRGRP & print->info.st_mode) ? 'r' : '-';
+	chmod[5] = (S_IWGRP & print->info.st_mode) ? 'w' : '-';
+	chmod[6] = (S_IXGRP & print->info.st_mode) ? 'x' : '-';
+	chmod[7] = (S_IROTH & print->info.st_mode) ? 'r' : '-';
+	chmod[8] = (S_IWOTH & print->info.st_mode) ? 'w' : '-';
+	chmod[9] = (S_IXOTH & print->info.st_mode) ? 'x' : '-';
+	chmod[10] = get_file_acl(print);
+	chmod[11] = '\0';
+	S_ISUID & print->info.st_mode ? chmod[3] = check_chmode1(chmod[3]) : 0;
+	S_ISGID & print->info.st_mode ? chmod[6] = check_chmode1(chmod[6]) : 0;
+	S_ISVTX & print->info.st_mode ? chmod[9] = check_chmode2(chmod) : 0;
+	for (int i = 0; chmod[i]; i++)
+		mx_printchar(chmod[i]);
+	mx_printchar(' ');
+}
+
+static void print_spaces(int size) {
+	for (int i = 0; i <= size; i++) {
+		mx_printchar(' ');
+	}
+}
+
+static char *minor_to_hex(char *minor) {
+	char *hex_minor = mx_strdup("0x00000000");
+
+	mx_strcpy(hex_minor + (10 - mx_strlen(minor)), minor);
+	mx_strdel(&minor);
+	return hex_minor;
+}
+
+static char *mx_get_minor(t_element *print) {
+	int minor_num = (int) (print->info.st_rdev & 0xffffff);
+	char *minor = NULL;
+
+	if (minor_num > 255)
+		minor = minor_to_hex(mx_nbr_to_hex(minor_num));
+	else
+		minor = mx_itoa(minor_num);
+	return minor;
+}
+
+static char *mx_get_major(t_element *print) {
+	return mx_itoa((int) (((unsigned int) print->info.st_rdev >> 24) & 0xff));
+}
+
+static void print_two_rows(t_element *print, t_element_size *size) {
+	char *major = mx_get_major(print);
+	char *minor = mx_get_minor(print);
+
+	if (size->is_dev == true)
+		if (IS_BLK(print->info.st_mode) || IS_CHR(print->info.st_mode)) {
+			print_spaces(2 - mx_strlen(major));
+			mx_printstr(major);
+			mx_printchar(',');
+			mx_printchar(' ');
+			print_spaces(2 - mx_strlen(minor));
+			mx_printstr(minor);
+		} else {
+			mx_printstr("       ");
+			mx_printint(print->info.st_size);
+		}
+	else
+		mx_printint(print->info.st_size);
+	free(major);
+	free(minor);
+}
+
+void mx_print_size(t_element *print, t_element_size *size) {
+	char *res_now = mx_itoa(print->info.st_size);
+	char *res_sz = mx_itoa(size->size);
+	int counter = 0;
+
+	if (mx_strlen(res_now) == mx_strlen(res_sz))
+		print_two_rows(print, size);
+	else if (mx_strlen(res_now) < mx_strlen(res_sz)) {
+		counter = mx_strlen(res_now);
+		while (counter != mx_strlen(res_sz)) {
+			mx_printchar(' ');
+			counter++;
+		}
+		print_two_rows(print, size);
+	}
+	mx_printchar(' ');
+	free(res_now);
+	free(res_sz);
 }
