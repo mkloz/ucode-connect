@@ -1,325 +1,175 @@
 #include "uls.h"
 
-static void get_user_name(t_element *print, int usr) {
-	struct passwd *pw = getpwuid(print->info.st_uid);
-	int counter = 0;
+static void print_spaces(int size) {
+	for (int i = 0; i < size; i++) {
+		mx_printchar(' ');
+	}
+}
+
+static void print_user_name(t_stat *info, int usr) {
+	struct passwd *pw = getpwuid(info->st_uid);
 	char *name = NULL;
 
-	if (pw)
+	if (pw) {
 		name = mx_strdup(pw->pw_name);
-	else
-		name = mx_itoa(print->info.st_uid);
-	if (mx_strlen(name) == usr)
-		mx_printstr(name);
-	else if (mx_strlen(name) < usr) {
-		counter = mx_strlen(name);
-		mx_printstr(name);
-		while (counter != usr) {
-			mx_printchar(' ');
-			counter++;
-		}
+	} else {
+		name = mx_itoa((int) info->st_uid);
 	}
-	mx_printstr("  ");
+	mx_printstr(name);
+	print_spaces(usr - mx_strlen(name));
 	free(name);
 }
 
-static void get_group_name(t_element *print, int group) {
-	struct group *grp = getgrgid(print->info.st_gid);
-	int counter = 0;
+static void print_group_name(t_stat *info, int max_group_size) {
+	struct group *grp = getgrgid(info->st_gid);
 	char *name = NULL;
 
-	if (grp)
+	if (grp) {
 		name = mx_strdup(grp->gr_name);
-	else
-		name = mx_itoa(print->info.st_gid);
-	if (mx_strlen(name) == group)
-		mx_printstr(name);
-	else if (mx_strlen(name) < group) {
-		counter = mx_strlen(name);
-		mx_printstr(name);
-		while (counter != group) {
-			mx_printchar(' ');
-			counter++;
-		}
+	} else {
+		name = mx_itoa((int) info->st_gid);
 	}
-	mx_printstr("  ");
+	mx_printstr(name);
+	print_spaces(max_group_size - mx_strlen(name));
 	free(name);
 }
 
-static void print_link_and_color(t_element *print, t_flags *flags) {
-	if (flags->G)
-		mx_printstr_g(print);
-	else if (IS_LNK(print->info.st_mode)) {
-		mx_printstr(print->name);
-		mx_print_symb_link(print);
-	} else
-		mx_printstr(print->name);
-}
+static void print_time(t_stat *info) {
+	char *element_time_str = ctime(&info->st_mtime);
 
-static void print_edit_time(t_element *print, char *t, t_flags *flags) {
-	int i = 0;
+	time_t current = time(NULL);
+	time_t diff = (current - info->st_mtime) > 0 ? current - info->st_mtime : info->st_mtime - current;
+	char *result = NULL;
 
-	if (flags->T)
-		for (i = 4; i < t[i]; i++)
-			mx_printchar(t[i]);
-	else {
-		if (1565913600 >= print->info.st_mtime) {
-			for (i = 4; i < 10; i++)
-				mx_printchar(t[i]);
-			mx_printstr("  ");
-			for (i = 20; i < 24; i++)
-				mx_printchar(t[i]);
-		} else
-			for (i = 4; i < 16; i++)
-				mx_printchar(t[i]);
+	if (diff > MX_HALF_OF_YEAR_IN_SECONDS) {
+		char *tmp = mx_strndup(&element_time_str[4], 7);
+		result = mx_strjoin(tmp, &element_time_str[19]);
+		result[mx_strlen(result) - 1] = '\0';
+
+		free(tmp);
+	} else {
+		result = mx_strndup(&element_time_str[4], 12);
 	}
-	mx_printstr(" ");
+
+	mx_printstr(result);
+	free(result);
 }
 
-static void print_link(t_element *print, t_element_size *size) {
-	int counter = 0;
-	char *res_itoa_now = mx_itoa(print->info.st_nlink);
-	char *res_itoa_lnk = mx_itoa(size->lnk);
-
-	if (mx_strlen(res_itoa_now) == mx_strlen(res_itoa_lnk)) {
-		mx_printint(print->info.st_nlink);
-	} else if (mx_strlen(res_itoa_now) < mx_strlen(res_itoa_lnk)) {
-		counter = mx_strlen(res_itoa_now);
-		while (counter != mx_strlen(res_itoa_lnk)) {
-			mx_printchar(' ');
-			counter++;
-		}
-		mx_printint(print->info.st_nlink);
-	}
-	mx_printchar(' ');
-	free(res_itoa_now);
-	free(res_itoa_lnk);
+static void print_links_count(t_stat *info, int max_links_count_size) {
+	print_spaces(max_links_count_size - mx_get_int_length((int) info->st_nlink));
+	mx_printint((int) info->st_nlink);
 }
 
-void mx_print_symb_link(t_element *print) {
+static void print_symbol_link(t_element *element) {
 	char *buf = NULL;
-	ssize_t nbytes = 0;
+	ssize_t bytes_read = 0;
 	ssize_t buf_size = 0;
 
-	buf_size = print->info.st_size == 0 ? 100 : print->info.st_size + 1;
-	buf = mx_strnew(buf_size);
-	nbytes = readlink(print->path, buf, buf_size);
+	buf_size = element->info.st_size == 0 ? 100 : element->info.st_size + 1;
+	buf = mx_strnew((int) buf_size);
+	bytes_read = readlink(element->path, buf, buf_size);
+
 	mx_printstr(" -> ");
-	if (nbytes >= 0)
+
+	if (bytes_read >= 0) {
 		mx_printstr(buf);
+	}
 	mx_strdel(&buf);
 }
 
-void mx_print_all(t_element *print, t_element_size *size, t_flags *fl) {
-	time_t *chtime = &print->info.st_ctime;
-	time_t *atime = &print->info.st_atime;
-	time_t *t = &print->info.st_mtime;
-
-	mx_print_permission(print);
-	print_link(print, size);
-	if ((fl->long_out && !fl->g) || (fl->o && !fl->g))
-		get_user_name(print, size->usr);
-	if ((fl->long_out && !fl->o) || (fl->g && !fl->o))
-		get_group_name(print, size->group);
-	mx_print_size(print, size);
-	if (fl->u)
-		t = atime;
-	if (fl->color_out)
-		t = chtime;
-	print_edit_time(print, ctime(t), fl);
-	print_link_and_color(print, fl);
-	mx_printchar('\n');
-}
-
-static void print_element_name(t_element *args) {
-	mx_printstr(args->name);
-	mx_printstr(MX_COLOR_RESET);
-}
-
-static int print_first_line(t_element *args) {
-	if (IS_DIR(args->info.st_mode)) {
-		mx_printstr("\033[34m");
-		print_element_name(args);
-		return 1;
-	} else if (IS_LNK(args->info.st_mode)) {
-		mx_printstr("\033[35m");
-		print_element_name(args);
-		return 1;
-	} else if (args->info.st_mode & S_IXOTH) {
-		mx_printstr(MX_COLOR_RED);
-		print_element_name(args);
-		return 1;
+static void print_link(t_element *element) {
+	if (MX_IS_LNK(element->info.st_mode)) {
+		mx_printstr(element->name);
+		print_symbol_link(element);
+	} else {
+		mx_printstr(element->name);
 	}
-	return 0;
 }
 
-static int print_second_line(t_element *args) {
-	if (IS_BLK(args->info.st_mode)) {
-		mx_printstr("\033[34;46m");
-		print_element_name(args);
-		return 1;
-	} else if (IS_CHR(args->info.st_mode)) {
-		mx_printstr("\033[34;43m");
-		print_element_name(args);
-		return 1;
-	} else if (IS_SOCK(args->info.st_mode)) {
-		mx_printstr("\033[32m");
-		print_element_name(args);
-		return 1;
-	}
-	return 0;
-}
+static char get_acl(char *path) {
+	acl_t acl;
 
-void mx_printstr_g(t_element *args) {
-	if (print_first_line(args) == 1) {
-	} else if (print_second_line(args) == 1) {
-	} else if (IS_FIFO(args->info.st_mode)) {
-		mx_printstr("\033[33m");
-		print_element_name(args);
-	} else if (IS_WHT(args->info.st_mode)) {
-		mx_printstr("\033[36m");
-		print_element_name(args);
-	} else if (IS_EXEC(args->info.st_mode)) {
-		mx_printstr("\033[31m");
-		print_element_name(args);
-	} else
-		mx_printstr(args->name);
-}
-
-static char get_file_acl(t_element *print) {
-	acl_t tmp;
-
-	if (listxattr(print->path, NULL, 0, XATTR_NOFOLLOW) > 0)
+	if (listxattr(path, NULL, 0, XATTR_NOFOLLOW) > 0) {
 		return ('@');
-	if ((tmp = acl_get_file(print->path, ACL_TYPE_EXTENDED))) {
-		acl_free(tmp);
+	}
+	if ((acl = acl_get_file(path, ACL_TYPE_EXTENDED))) {
+		acl_free(acl);
 		return ('+');
 	}
 	return (' ');
 }
 
-static char check_permition(t_element *print) {
-	if (IS_DIR(print->info.st_mode))
+static char check_element_type(t_element *print) {
+	if (MX_IS_DIR(print->info.st_mode))
 		return 'd';
-	if (IS_LNK(print->info.st_mode))
+	if (MX_IS_LNK(print->info.st_mode))
 		return 'l';
-	if (IS_BLK(print->info.st_mode))
+	if (MX_IS_BLK(print->info.st_mode))
 		return 'b';
-	if (IS_CHR(print->info.st_mode))
+	if (MX_IS_CHR(print->info.st_mode))
 		return 'c';
-	if (IS_FIFO(print->info.st_mode))
+	if (MX_IS_FIFO(print->info.st_mode))
 		return 'p';
-	if (IS_SOCK(print->info.st_mode))
+	if (MX_IS_SOCK(print->info.st_mode))
 		return 's';
-	if (IS_WHT(print->info.st_mode))
+	if (MX_IS_WHT(print->info.st_mode))
 		return 'w';
 	return '-';
 }
 
-static char check_chmode1(char chmod) {
-	if (chmod == '-')
-		return chmod = 'S';
-	else
-		return chmod = 's';
+static void print_permission(t_element *element) {
+	int mode = (int) element->info.st_mode;
+	char chmod[12] = {check_element_type(element), (S_IRUSR & mode) ? 'r' : '-',
+	                  (S_IWUSR & mode) ? 'w' : '-',
+	                  (S_IXUSR & mode) ? 'x' : '-',
+	                  (S_IRGRP & mode) ? 'r' : '-',
+	                  (S_IWGRP & mode) ? 'w' : '-',
+	                  (S_IXGRP & mode) ? 'x' : '-',
+	                  (S_IROTH & mode) ? 'r' : '-',
+	                  (S_IWOTH & mode) ? 'w' : '-',
+	                  (S_IXOTH & mode) ? 'x' : '-',
+	                  get_acl(element->path),
+	                  '\0'};
+
+	if (S_ISUID & mode) chmod[3] = (chmod[3] == '-') ? 'S' : 's';
+	if (S_ISGID & mode) chmod[6] = (chmod[6] == '-') ? 'S' : 's';
+	if (S_ISVTX & mode) chmod[9] = (chmod[9] == '-') ? 'T' : 't';
+
+	mx_printstr(chmod);
 }
 
-static char check_chmode2(char *chmod) {
-	if (chmod[9] == '-')
-		return chmod[9] = 'T';
-	else
-		return chmod[9] = 't';
-}
-
-void mx_print_permission(t_element *print) {
-	char chmod[12];
-
-	chmod[0] = check_permition(print);
-	chmod[1] = (S_IRUSR & print->info.st_mode) ? 'r' : '-';
-	chmod[2] = (S_IWUSR & print->info.st_mode) ? 'w' : '-';
-	chmod[3] = (S_IXUSR & print->info.st_mode) ? 'x' : '-';
-	chmod[4] = (S_IRGRP & print->info.st_mode) ? 'r' : '-';
-	chmod[5] = (S_IWGRP & print->info.st_mode) ? 'w' : '-';
-	chmod[6] = (S_IXGRP & print->info.st_mode) ? 'x' : '-';
-	chmod[7] = (S_IROTH & print->info.st_mode) ? 'r' : '-';
-	chmod[8] = (S_IWOTH & print->info.st_mode) ? 'w' : '-';
-	chmod[9] = (S_IXOTH & print->info.st_mode) ? 'x' : '-';
-	chmod[10] = get_file_acl(print);
-	chmod[11] = '\0';
-	S_ISUID & print->info.st_mode ? chmod[3] = check_chmode1(chmod[3]) : 0;
-	S_ISGID & print->info.st_mode ? chmod[6] = check_chmode1(chmod[6]) : 0;
-	S_ISVTX & print->info.st_mode ? chmod[9] = check_chmode2(chmod) : 0;
-	for (int i = 0; chmod[i]; i++)
-		mx_printchar(chmod[i]);
-	mx_printchar(' ');
-}
-
-static void print_spaces(int size) {
-	for (int i = 0; i <= size; i++) {
-		mx_printchar(' ');
-	}
-}
-
-static char *minor_to_hex(char *minor) {
-	char *hex_minor = mx_strdup("0x00000000");
-
-	mx_strcpy(hex_minor + (10 - mx_strlen(minor)), minor);
-	mx_strdel(&minor);
-	return hex_minor;
-}
-
-static char *mx_get_minor(t_element *print) {
-	int minor_num = (int) (print->info.st_rdev & 0xffffff);
-	char *minor = NULL;
-
-	if (minor_num > 255)
-		minor = minor_to_hex(mx_nbr_to_hex(minor_num));
-	else
-		minor = mx_itoa(minor_num);
-	return minor;
-}
-
-static char *mx_get_major(t_element *print) {
-	return mx_itoa((int) (((unsigned int) print->info.st_rdev >> 24) & 0xff));
-}
-
-static void print_two_rows(t_element *print, t_element_size *size) {
-	char *major = mx_get_major(print);
-	char *minor = mx_get_minor(print);
-
-	if (size->is_dev == true)
-		if (IS_BLK(print->info.st_mode) || IS_CHR(print->info.st_mode)) {
-			print_spaces(2 - mx_strlen(major));
-			mx_printstr(major);
-			mx_printchar(',');
-			mx_printchar(' ');
-			print_spaces(2 - mx_strlen(minor));
-			mx_printstr(minor);
-		} else {
-			mx_printstr("       ");
-			mx_printint(print->info.st_size);
+static char *get_size(t_stat *info) {
+	if (MX_IS_BLK(info->st_mode) || MX_IS_CHR(info->st_mode)) {
+		if (info->st_rdev == 0) {
+			return mx_itoa((int) info->st_rdev);
 		}
-	else
-		mx_printint(print->info.st_size);
-	free(major);
-	free(minor);
+		return mx_strjoin("0x", mx_nbr_to_hex(info->st_rdev));
+	}
+
+	return mx_itoa((int) info->st_size);
 }
 
-void mx_print_size(t_element *print, t_element_size *size) {
-	char *res_now = mx_itoa(print->info.st_size);
-	char *res_sz = mx_itoa(size->size);
-	int counter = 0;
+static void print_size(t_stat *info, int max_size_len) {
+	char *size_str = get_size(info);
 
-	if (mx_strlen(res_now) == mx_strlen(res_sz))
-		print_two_rows(print, size);
-	else if (mx_strlen(res_now) < mx_strlen(res_sz)) {
-		counter = mx_strlen(res_now);
-		while (counter != mx_strlen(res_sz)) {
-			mx_printchar(' ');
-			counter++;
-		}
-		print_two_rows(print, size);
-	}
+	print_spaces(max_size_len - mx_strlen(size_str));
+	mx_printstr(size_str);
+	free(size_str);
+}
+
+void mx_print_line_l(t_element *print, t_max_len_limits *len) {
+	print_permission(print);
 	mx_printchar(' ');
-	free(res_now);
-	free(res_sz);
+	print_links_count(&print->info, len->max_link_len);
+	mx_printchar(' ');
+	print_user_name(&print->info, len->max_username_len);
+	mx_printstr("  ");
+	print_group_name(&print->info, len->max_group_name_len);
+	mx_printstr("  ");
+	print_size(&print->info, len->max_size_len);
+	mx_printchar(' ');
+	print_time(&print->info);
+	mx_printstr(" ");
+	print_link(print);
+	mx_printchar('\n');
 }

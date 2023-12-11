@@ -1,27 +1,30 @@
 #include "uls.h"
 
-void mx_output_err(t_element ***error, t_flags *fl) {
-    if (error && *error && **error) {
-	    mx_sort_elements(error, fl);
-        fl->files = true;
-        fl->ex = true;
-        for (int i = 0; (*error)[i]; i++) {
-            mx_printerr("uls: ");
-            mx_printerr((*error)[i]->name);
-            mx_printerr(": ");
-            mx_printerr((*error)[i]->error_message);
-            mx_printerr("\n");
-            mx_strdel(&(*error)[i]->name);
-            mx_strdel(&(*error)[i]->path);
-            mx_strdel(&(*error)[i]->error_message);
-            free((*error)[i]);
-            (*error)[i] = NULL;
-        }
-        free(*error);
-        *error = NULL;
-    }
+void mx_delete_element(t_element *el) {
+	if (el == NULL) return;
+	mx_strdel(&el->name);
+	mx_strdel(&el->path);
+	mx_strdel(&el->error_message);
+	for (t_element_list *list = el->inner_elements; list; list = list->next) {
+		mx_delete_element(list->data);
+	}
+	mx_clear_list((t_list **) &el->inner_elements);
+	free(el);
+	el = NULL;
 }
 
-void mx_printchar_err(char c) {
-    write(STDERR_FILENO,&c,1);
+void mx_output_errors(t_element_list *element) {
+	mx_sort_elements(&element);
+
+	for (t_element_list *error = element; error; error = error->next) {
+		mx_printerr("uls: ");
+		mx_printerr((error->data->name));
+		mx_printerr(": ");
+		mx_printerr(error->data->error_message);
+		mx_printerr("\n");
+	}
+}
+
+void mx_print_char_err(char c) {
+	write(STDERR_FILENO, &c, 1);
 }

@@ -1,21 +1,31 @@
 #include "uls.h"
 
+void mx_delete_uls(t_uls *uls) {
+	for (t_element_list *el = uls->elements; el; el = el->next) {
+		mx_delete_element(el->data);
+	}
+	mx_clear_list((t_list **) &uls->elements);
+	mx_clear_list((t_list **) &uls->files);
+	mx_clear_list((t_list **) &uls->dirs);
+	mx_clear_list((t_list **) &uls->errors);
+
+	free(uls->flags);
+}
+
 int main(int argc, char *argv[]) {
-	int args_elements_index = 1;
-	int exit_code = EXIT_SUCCESS;
-	t_flags *flags = mx_get_flags(argv, &args_elements_index);
-	t_element **args = mx_get_names(argc, argv, args_elements_index);
+	t_flags *flags = mx_parse_flags(argc > 1 ? argv[1] : "-");
+	t_element_list *elements = mx_parse_elements(argc, argv);
 
-	mx_sort_elements(&args, flags);
+	mx_sort_elements(&elements);
 
-	if (args) {
-		mx_dir(&args, flags);
-	}
-	if (flags->ex) {
-		exit_code = EXIT_FAILURE;
-	}
+	t_uls uls = {elements,
+	             mx_get_files(elements),
+	             mx_get_dirs(elements),
+	             mx_get_errors(elements),
+	             flags, EXIT_SUCCESS};
+	int exit_code = mx_ls(&uls);
 
-	free(flags);
-	flags = NULL;
+	mx_delete_uls(&uls);
+
 	return exit_code;
 }

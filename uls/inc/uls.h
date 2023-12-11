@@ -15,111 +15,93 @@
 #include <dirent.h>
 #include <string.h>
 
-#define IS_BLK(mode) (((mode) & S_IFMT) == S_IFBLK)
-#define IS_CHR(mode) (((mode) & S_IFMT) == S_IFCHR)
-#define IS_DIR(mode) (((mode) & S_IFMT) == S_IFDIR)
-#define IS_LNK(mode) (((mode) & S_IFMT) == S_IFLNK)
-#define IS_SOCK(mode) (((mode) & S_IFMT) == S_IFSOCK)
-#define IS_FIFO(mode) (((mode) & S_IFMT) == S_IFIFO)
-#define IS_WHT(mode) (((mode) & S_IFMT) == S_IFWHT)
-#define IS_REG(mode) (((mode) & S_IFMT) == S_IFREG)
-#define IS_EXEC(mode) ((mode) & S_IXUSR)
+#define MX_IS_BLK(mode) (((mode) & S_IFMT) == S_IFBLK)
+#define MX_IS_CHR(mode) (((mode) & S_IFMT) == S_IFCHR)
+#define MX_IS_DIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+#define MX_IS_LNK(mode) (((mode) & S_IFMT) == S_IFLNK)
+#define MX_IS_SOCK(mode) (((mode) & S_IFMT) == S_IFSOCK)
+#define MX_IS_FIFO(mode) (((mode) & S_IFMT) == S_IFIFO)
+#define MX_IS_WHT(mode) (((mode) & S_IFMT) == S_IFWHT)
 
-#define MX_COLOR_RED        "\x1b[31m"
-#define MX_COLOR_RESET      "\x1b[0m"
+#define MX_HALF_OF_YEAR_IN_SECONDS 15768000
+
+typedef struct s_element t_element;
+typedef struct stat t_stat;
 
 typedef struct s_flags {
 	bool long_out;
-	bool C;
-	bool x;
-	bool recursive;
-	bool r;
-	bool t;
-	bool u;
-	bool color_out;
-	bool S;
-	bool show_hidden;
-	bool show_all_hidden;
-	bool force;
-	bool m;
-	bool files;
-	bool G;
-	bool T;
-	bool g;
-	bool o;
-	bool ex;
+	bool one;
 } t_flags;
 
-typedef struct s_element_size {
-	int lnk;
-	int size;
-	int group;
-	int usr;
-	bool is_dev;
-} t_element_size;
+typedef struct s_max_len_limits {
+	int max_link_len;
+	int max_size_len;
+	int max_group_name_len;
+	int max_username_len;
+} t_max_len_limits;
+
+typedef struct s_element_list {
+	t_element *data;
+	struct s_element_list *next;
+} t_element_list;
 
 typedef struct s_element {
 	char *name;
 	char *path;
 	char *error_message;
-	struct stat info;
-	struct s_element **inner_elements;
+	t_stat info;
+	t_element_list *inner_elements;
 } t_element;
 
-typedef struct s_counters {
-	int files_index;
-	int dir_index;
-	int errors_index;
-} t_counters;
+typedef struct s_uls {
+	t_element_list *elements;
+	t_element_list *files;
+	t_element_list *dirs;
+	t_element_list *errors;
+	t_flags *flags;
+	int exit_code;
+} t_uls;
 
-t_flags *mx_get_flags(char *argv[], int *i);
+void mx_delete_element(t_element *el);
 
-void mx_printstr_g(t_element *args);
+t_element_list *mx_get_errors(t_element_list *elements);
 
-int max_len_names(t_element **names);
+t_element_list *mx_get_dirs(t_element_list *elements);
 
-void mx_print_tab(int len, int maxlen);
+t_element_list *mx_get_files(t_element_list *elements);
 
-void mx_del_arr_arr(t_element ***args);
+int mx_ls(t_uls *uls);
 
-void mx_printchar_err(char c);
+void mx_delete_uls(t_uls *uls);
 
-t_element **mx_get_names(int argc, char **argv, int i);
+t_flags *mx_create_flags(void);
 
-void mx_dir(t_element ***args, t_flags *flags);
+t_flags *mx_parse_flags(char *flag_string);
 
-void mx_output_all(t_element ***args, t_flags *fl);
+void mx_print_tab(int len, int max_name_size);
+
+void mx_output_default(t_element_list *elements);
+
+void mx_output(t_uls *uls, t_element_list *elements);
+
+void mx_output_dirs(t_uls *uls);
+
+t_element_list *mx_parse_elements(int argc, char **argv);
+
+void mx_output_errors(t_element_list *element);
+
+void mx_output_l(t_element_list *elements, bool print_total);
+
+void mx_print_line_l(t_element *el, t_max_len_limits *len);
+
+void mx_output_files(t_uls *uls, t_element_list *elements);
+
+void mx_print_char_err(char c);
 
 void mx_join_path(char **res, char *s2);
 
-void mx_sort_elements(t_element ***disp, t_flags *flags);
+void mx_sort_elements(t_element_list **list);
 
-t_element **mx_get_files(t_element ***args, t_flags *fl);
-
-void mx_delete_elements(t_element ***args, t_flags *fl);
-
-void mx_delete_elements_list(t_element ***args, t_element **dirs);
-
-void mx_output(t_element ***names, t_flags *fl, int flag);
-
-void mx_output_err(t_element ***error, t_flags *fl);
-
-void mx_output_x(t_element **names);
-
-void mx_output_c(t_element **names);
-
-void mx_output_m(t_element **names, t_flags *fl);
-
-void mx_output_g(t_element **names, t_flags *fl);
-
-void mx_output_l(t_element **names, t_flags *fl, int flag);
-
-void mx_print_permission(t_element *print);
-
-void mx_print_size(t_element *print, t_element_size *size);
-
-void mx_print_symb_link(t_element *print);
-
-void mx_print_all(t_element *print, t_element_size *size, t_flags *fl);
+int mx_get_int_length(int number);
 
 #endif
