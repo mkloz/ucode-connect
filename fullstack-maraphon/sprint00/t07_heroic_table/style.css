@@ -1,0 +1,49 @@
+table {
+    text-align: center;
+    background: linear-gradient(to right, #6e0000, antiquewhite);
+    border: 5px solid #000000;
+    border-collapse: collapse;
+}
+
+thead {
+    color: #ffe369;
+    font-weight: bold;
+    background-color: rgba(110, 0, 0, 0.4);
+    border: 2px solid rgba(189, 195, 199, 0.05);
+    padding: 10px;
+}
+
+thead th {
+    padding: 10px;
+}
+
+tbody th {
+    color: white;
+    font-weight: bold;
+    padding: 5px 50px;
+}
+
+td {
+    background: antiquewhite;
+    color: midnightblue;
+    padding: 5px 50px;
+    border: 2px solid rgba(189, 195, 199, 0.05);
+}
+
+.data_false {
+    color: white;
+    background: rgb(116, 6, 6);
+}
+
+a {
+    color: white;
+    font-weight: bold;
+}
+
+.color1 {
+    background: linear-gradient(to right, #6e0000, rgb(138, 39, 17));
+}
+
+.color2 {
+    background: linear-gradient(to right, #6e0000, rgb(252, 164, 144));
+}

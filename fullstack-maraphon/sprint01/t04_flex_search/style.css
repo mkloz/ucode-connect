@@ -1,0 +1,26 @@
+form {
+    display: flex;
+    grid-template-columns: 1fr 50px;
+}
+
+div {
+    text-align: center;
+}
+
+input {
+    height: 2em;
+    color: green;
+}
+
+input:hover {
+    color: red;
+}
+
+#search {
+    width: 100%;
+    padding-left: 10px;
+}
+
+::-webkit-input-placeholder {
+    color: green;
+}

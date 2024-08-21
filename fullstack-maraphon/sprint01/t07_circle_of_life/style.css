@@ -1,0 +1,27 @@
+div {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: green;
+    position: absolute;
+    top: 50px;
+    z-index: 1;
+
+    animation: move 4s linear alternate infinite;
+}
+
+div:hover {
+    background-color: red;
+    transition-delay: 2s;
+}
+
+@keyframes move {
+    0% {
+        right: 0;
+        left: 0;
+    }
+    100% {
+        right: 95%;
+        left: 95%;
+    }
+}

@@ -1,0 +1,13 @@
+body h1 span {
+    position: absolute;
+    top: 0.4em;
+    font: bold 4em Arial, sans-serif;
+    color: white;
+}
+
+body h1 {
+    display: flex;
+    justify-content: center;
+    height: 4.6em;
+    background-color: red;
+}

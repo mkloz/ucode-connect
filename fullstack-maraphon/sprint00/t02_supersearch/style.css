@@ -1,0 +1,17 @@
+form {
+    display: flex;
+}
+
+input {
+    height: 2em;
+    color: green;
+}
+
+input:hover {
+    color: red;
+}
+
+#search {
+    width: 100%;
+    padding-left: 10px;
+}

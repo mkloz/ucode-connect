@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Files</title>
+</head>
+
+<body>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      border: 1px solid #ccc;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .row {
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .hide {
+      display: none;
+    }
+  </style>
+  <h1>Files Manager</h1>
+  <div class="container">
+    <h2>Create a File</h2>
+    <form action="/" method="POST" id="createForm">
+      <div class="row">
+        <label for="fileName">Filename:</label>
+        <input type="text" id="fileName" name="fileName" required>
+      </div>
+      <div class="row">
+        <label for="fileContent">Content:</label>
+        <textarea id="fileContent" name="fileContent" cols="50" rows="10" required></textarea>
+      </div>
+      <button type="submit">Create File</button>
+    </form>
+  </div>
+
+  <div class="container">
+    <h2>List of Files</h2>
+    <ul id="fileList"></ul>
+  </div>
+
+  <div class="container" id="currentFile">
+    <h2>Current File</h2>
+    <p id="fileName"></p>
+    <pre id="fileContent"></pre>
+    <button id="deleteButton">Delete File</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

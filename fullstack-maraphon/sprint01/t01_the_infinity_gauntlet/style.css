@@ -1,0 +1,23 @@
+.gauntlet {
+    height: 300px;
+}
+
+img {
+    height: 100px;
+}
+
+.box {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 1em;
+}
+.row {
+    display: flex;
+    flex-flow: row nowrap;
+}
+.gauntlet:hover + .box .row:nth-child(odd) img:nth-child(odd) {
+    opacity: 0;
+}
+.gauntlet:hover + .box .row:nth-child(even) img:nth-child(even) {
+    opacity: 0;
+}

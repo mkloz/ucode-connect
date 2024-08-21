@@ -1,0 +1,82 @@
+<!-- index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Manager</title>
+</head>
+
+<body>
+  <h1>Password Manager</h1>
+  <form id="saveForm">
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+    <br>
+    <label for="salt">Salt:</label>
+    <input type="text" id="salt" name="salt" required>
+    <br>
+    <button type="submit">Save</button>
+  </form>
+
+  <h2>Hashed Password:</h2>
+  <p id="hashedPassword"></p>
+
+  <h2>Guess Password:</h2>
+  <form id="guessForm" enctype="">
+    <label for="guess">Guess:</label>
+    <input type="password" id="guess" name="guess" required>
+    <button type="submit">Submit Guess</button>
+  </form>
+
+  <button id="clearButton">Clear Session</button>
+
+  <script>
+    const saveForm = document.getElementById('saveForm');
+    const guessForm = document.getElementById('guessForm');
+    const clearButton = document.getElementById('clearButton');
+    const hashedPasswordElement = document.getElementById('hashedPassword');
+
+    saveForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(saveForm);
+      formData.entries().forEach(([key, value]) => console.log(key, value));
+      const response = await fetch('/save', {
+        method: 'POST',
+        body: formData,
+      });
+      if (response.ok) {
+        const data = await response.text();
+        hashedPasswordElement.innerText = data;
+      }
+    });
+
+    guessForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(guessForm);
+      const response = await fetch('/guess', {
+        method: 'POST',
+        body: formData,
+      });
+      if (response.ok) {
+        const message = await response.text();
+        alert(message);
+      } else {
+        alert('Access denied!');
+      }
+    });
+
+    clearButton.addEventListener('click', async () => {
+      const response = await fetch('/clear', { method: 'POST' });
+      if (response.ok) {
+        hashedPasswordElement.innerText = '';
+        alert('Session cleared');
+      }
+    });
+
+  </script>
+</body>
+
+</html>

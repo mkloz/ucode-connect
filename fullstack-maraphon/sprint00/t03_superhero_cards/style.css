@@ -1,0 +1,30 @@
+.card_box {
+    font-family: Verdana, serif;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.card {
+    min-width: 270px;
+    width: 270px;
+    height: 140px;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 30px;
+    overflow: visible;
+}
+
+.hero-img {
+    height: 182px;
+    position: relative;
+}
+
+.text {
+    float: right;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 0;
+}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Processor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <h1>Image Processor</h1>
+  <form id="imageForm">
+    <label for="imageUrl">Image URL:</label><br>
+    <input type="text" id="imageUrl" name="imageUrl"><br>
+    <button type="button" onclick="processImage()">Process Image</button>
+  </form>
+  <hr>
+  <h2>Original Image</h2>
+  <img id="original-image" src="" alt="Original Image">
+  <hr>
+  <h2>Processed Images</h2>
+  <h3>Square Image</h3>
+  <img id="square-image" src="" alt="Square Image">
+  <h3>Red Channel</h3>
+  <img id="red-channel" src="" alt="Red Channel">
+  <h3>Green Channel</h3>
+  <img id="green-channel" src="" alt="Green Channel">
+  <h3>Blue Channel</h3>
+  <img id="blue-channel" src="" alt="Blue Channel">
+
+  <script src="index.js"></script>
+</body>
+
+</html>

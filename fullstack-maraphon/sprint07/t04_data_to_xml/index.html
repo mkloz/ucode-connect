@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avenger Quotes</title>
+  <style>
+    .container {
+      display: flex;
+    }
+
+    .column {
+      flex: 1;
+      padding: 10px;
+    }
+
+    .quote {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+    }
+
+    .photo {
+      width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="column">
+      <h2>Before XML Conversion</h2>
+      <div id="before-conversion"></div>
+    </div>
+    <div class="column">
+      <h2>After XML Conversion</h2>
+      <div id="after-conversion"></div>
+    </div>
+  </div>
+
+  <script>
+    async function fetchQuotesBeforeConversion() {
+      const response = await fetch('/before-conversion');
+      const data = await response.json();
+      displayQuotes('before-conversion', data);
+    }
+
+    async function fetchQuotesAfterConversion() {
+      const response = await fetch('/after-conversion');
+      const data = await response.json();
+      displayQuotes('after-conversion', data);
+    }
+
+    function displayQuotes(containerId, quotes = []) {
+      console.log(quotes);
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      quotes.forEach(quote => {
+        console.log(quote);
+        const quoteDiv = document.createElement('div');
+        quoteDiv.classList.add('quote');
+        quoteDiv.innerHTML = `
+                    <p><strong>Author:</strong> ${quote.author}</p>
+                    <p><strong>Quote:</strong> ${quote.quote}</p>
+                    <p><strong>Photos:</strong></p>
+                    <div>
+                        ${quote.photo?.map(photo => `<img src="${photo}" class="photo" alt="Photo">`).join('')}
+                    </div>
+                    <p><strong>Publish Date:</strong> ${quote.publishDate}</p>
+                    <p><strong>Comments:</strong></p>
+                    <ul>
+                        <li> ${quote.comments?.comment} - ${quote.comments?.date}</li >
+                    </ul >
+                `;
+        container.appendChild(quoteDiv);
+      });
+    }
+
+    window.onload = async () => {
+      await fetchQuotesBeforeConversion();
+      await fetch('/create', { method: 'POST' });
+      await fetchQuotesAfterConversion();
+    };
+  </script>
+</body>
+
+</html>

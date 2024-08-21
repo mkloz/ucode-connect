@@ -1,0 +1,13 @@
+.item {
+    text-align: center;
+}
+* {
+    border: 2px solid red;
+}
+.container {
+    padding: 1em;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 200px);
+    justify-content: space-around;
+    grid-gap: 1em;
+}

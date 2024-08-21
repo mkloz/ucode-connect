@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>String Conversion</title>
+</head>
+
+<body>
+  <h1>String Conversion</h1>
+  <form id="conversionForm">
+    <label for="inputString">Input String:</label>
+    <input type="text" id="inputString" name="inputString" required>
+    <br>
+    <label for="charset">Charset:</label>
+    <select id="charset" name="charset" multiple>
+      <option value="utf8">UTF-8</option>
+      <option value="utf16">UTF-16</option>
+      <option value="latin1">Latin-1</option>
+    </select>
+    <br>
+    <button type="submit">Change Charset</button>
+    <button type="button" id="clearButton">Clear</button>
+  </form>
+
+  <div id="output">
+    <h2>Converted Strings:</h2>
+    <ul id="convertedStrings"></ul>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const conversionForm = document.getElementById('conversionForm');
+      const clearButton = document.getElementById('clearButton');
+      const convertedStringsList = document.getElementById('convertedStrings');
+
+      conversionForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(conversionForm);
+        const response = await fetch('/convert', {
+          method: 'POST',
+          body: formData
+        });
+        if (response.ok) {
+          const data = await response.json();
+          convertedStringsList.innerHTML = '';
+          data.forEach(convertedString => {
+            const li = document.createElement('li');
+            li.textContent = convertedString;
+            convertedStringsList.appendChild(li);
+          });
+        }
+      });
+
+      clearButton.addEventListener('click', () => {
+        convertedStringsList.innerHTML = '';
+      });
+    });
+  </script>
+</body>
+
+</html>

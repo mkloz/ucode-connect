@@ -1,0 +1,117 @@
+h1 {
+    text-align: center;
+}
+
+img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.box {
+    display: grid;
+    grid-template-columns: repeat(100, 1fr);
+    margin: 20px;
+    border: 3px solid black;
+    border-radius: 15px;
+    padding: 10px;
+}
+
+.box > div:first-child {
+    grid-column: 1 / span 44;
+}
+
+.box > div:nth-child(2) {
+    grid-column: 46 / span 55;
+}
+
+.box > div:nth-child(3) {
+    grid-column: 1 / span 39;
+}
+
+.box > div:nth-child(4) {
+    grid-column: 41 / span 32;
+}
+
+.box > div:nth-child(5) {
+    grid-column: 74 / span 27;
+}
+
+.box > div:nth-child(6) {
+    grid-column: 1 / span 19;
+}
+
+.box > div:nth-child(7) {
+    grid-column: 21 / span 28;
+}
+
+.box > div:nth-child(8) {
+    grid-column: 54 / span 14;
+}
+
+.box > div:nth-child(9) {
+    grid-column: 69 / span 32;
+}
+
+@media (min-width: 640px) and (max-width: 1366px) {
+    .box > div:first-child {
+        grid-column: 1 / span 72;
+    }
+    .box > div:nth-child(2) {
+        grid-column: 1 / span 87;
+    }
+    .box > div:nth-child(3) {
+        grid-column: 1 / span 67;
+    }
+    .box > div:nth-child(4) {
+        grid-column: 1 / span 54;
+    }
+    .box > div:nth-child(5) {
+        grid-column: 55 / span 46;
+    }
+    .box > div:nth-child(6) {
+        grid-column: 1 / span 33;
+    }
+    .box > div:nth-child(7) {
+        grid-column: 34 / span 49;
+    }
+    .box > div:nth-child(8) {
+        grid-column: 1 / span 24;
+    }
+    .box > div:nth-child(9) {
+        grid-column: 25 / span 56;
+    }
+}
+
+@media (max-width: 640px) {
+    .box > div:first-child {
+        grid-column: 1 / span 78;
+    }
+    .box > div:nth-child(2) {
+        grid-column: 1 / span 87;
+    }
+    .box > div:nth-child(3) {
+        grid-column: 1 / span 76;
+    }
+    .box > div:nth-child(4) {
+        grid-column: 1 / span 61;
+        grid-row: 4;
+    }
+    .box > div:nth-child(5) {
+        grid-column: 1 / span 52;
+        grid-row: 5;
+    }
+    .box > div:nth-child(6) {
+        grid-column: 62 / span 39;
+        grid-row: 4 / 6;
+    }
+    .box > div:nth-child(7) {
+        grid-column: 1 / span 55;
+    }
+    .box > div:nth-child(8) {
+        grid-column: 56 / span 28;
+    }
+    .box > div:nth-child(9) {
+        grid-column: 1 / span 63;
+    }
+}
